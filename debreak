@@ -1,0 +1,271 @@
+#!/usr/bin/python2
+import debreak_detect
+import debreak_merge_contig as debreak_merge
+import debreak_writevcf
+import os
+import argparse
+import multiprocessing 
+import debreak_rescuedupfromins
+import debreak_resdup_selfalignment
+import debreak_genotype
+import debreak_allpoa
+import debreak_rescuelargeins
+import pysam
+
+parser=argparse.ArgumentParser(description='SV caller for long-read sequencing data', usage='debreak.py [-h] --bam <sort.bam>')
+parser.add_argument('--version', action='version', version='DeBreak_v1.0.2')
+parser.add_argument('--bam',type=str,default=False,help='input sorted bam. index required')
+parser.add_argument('--samlist',type=str,default=False,help='a list of SAM files of same sample')
+parser.add_argument('-o','--outpath',type=str,default='./debreak-out/',help='output directory')
+parser.add_argument('-p','--prefix',type=str,default=False,help='prefix of output')
+
+parser.add_argument('--min_size',type=int,default=48,help='minimal size of detected SV')
+parser.add_argument('--max_size',type=int,default=400000000,help='maxminal size of detected SV')
+parser.add_argument('-d','--depth',type=float,default=False,help='sequencing depth of this dataset')
+parser.add_argument('-m','--min_support',type=int,default=False,help='minimal number of supporting reads for one event')
+parser.add_argument('--min_quality',type=int,default=None,help='minimal mapping quality of reads')
+parser.add_argument('--aligner',type=str,default='minimap2',help='aligner used to generate BAM/SAM')
+
+parser.add_argument('-t','--thread',type=int,default=8,help='number of threads')
+parser.add_argument('--rescue_dup',action='store_true',default=False,help='rescue DUP from INS calls. minimap2,ref required')
+parser.add_argument('--rescue_large_ins',action='store_true',default=False,help='rescue large INS. wtdbg2,minimap2,ref required')
+parser.add_argument('--poa',action='store_true',default=False,help='POA for accurate breakpoint. wtdbg2,minimap2,ref required.')
+parser.add_argument('--no_genotype',action='store_true',default=False,help='disable genotyping')
+parser.add_argument('-r','--ref',type=str,default=False,help='reference genome. Should be same with SAM/BAM')
+parser.add_argument('--maxcov',type=int,default=False,help='Maximal coverage for a SV. Suggested maxcov as 2 times mean depth.')
+parser.add_argument('--skip_detect',action='store_true',default=False,help='Skip SV raw signal detection.')
+
+
+debreak_args=parser.parse_args()
+
+if not debreak_args.samlist and not debreak_args.bam:
+	print 'Error:  No input file given!\nFor Debreak usage, use -h or --help'
+	quit()
+
+if debreak_args.outpath=='./debreak-out/':
+	os.system("mkdir debreak-out")
+
+if debreak_args.outpath[-1]!='/':
+	debreak_args.outpath+='/'
+
+if not os.path.exists(debreak_args.outpath):
+	os.makedirs(debreak_args.outpath)
+
+
+if debreak_args.aligner=='ngmlr' and debreak_args.min_quality==None:
+	min_qual_inv=30
+elif debreak_args.min_quality==None:
+	min_qual_inv=0
+else:
+	min_qual_inv=debreak_args.min_quality
+
+if debreak_args.aligner=='minimap2' and debreak_args.min_quality==None:
+	min_qual_del=10
+elif debreak_args.min_quality==None:
+	min_qual_del=0
+else:
+	min_qual_del=debreak_args.min_quality
+
+if not debreak_args.min_quality:
+	debreak_args.min_quality=0
+
+writepath=debreak_args.outpath
+
+
+record_clip=False
+if debreak_args.rescue_large_ins:
+	if debreak_args.bam:
+		if debreak_args.ref:
+			os.system("mkdir "+writepath+'debreak_ins_workspace/')
+			record_clip=True
+		else:
+			print 'No reference provided. Rescue_large_INS module aborted.'
+	else:
+		print 'Rescue_large_INS module requires sorted BAM input. Aborted.'
+
+
+vcflist=[]
+os.system("mkdir "+writepath+'map_depth/')
+if not debreak_args.bam:
+	# Detect SVs from all SAM files
+	samlistpath=debreak_args.samlist
+	f=open(samlistpath,'r')
+	samlist=f.read().split('\n')[:-1]
+	f.close()
+	readpath=debreak_args.samlist[:-len(debreak_args.samlist.split('/')[-1])]
+	chromosomes=pysam.AlignmentFile(readpath+samlist[0],'r').references
+	chromosomes=[c for c in chromosomes]
+	debreak_det=multiprocessing.Pool(debreak_args.thread)
+
+	for i in range(len(samlist)):
+		vcflist+=[samlist[i][:-4]+'.debreak.temp']
+		if not debreak_args.skip_detect:
+			debreak_det.apply_async(debreak_detect.detect_sam,args=(samlist[i],readpath,writepath,chromosomes,debreak_args.min_size,debreak_args.max_size,True))
+	print 'Wait for all SAM files done...'
+	debreak_det.close()
+	debreak_det.join()
+	print 'All sam files are processed!'
+else:
+	# Detect SVs from sorted bam file
+	readpath=debreak_args.bam
+	chromosomes=pysam.AlignmentFile(readpath,'rb').references
+	print chromosomes
+	#chromosomes=[c for c in chromosomes]
+	#chromosomes=['chr1','chr2','chr3','chr4','chr5','chr6','chr7','chr8','chr9','chr10','chr11','chr12','chr13','chr14','chr15','chr16','chr17','chr18','chr19','chr20','chr21','chr22','chrX']
+	debreak_det=multiprocessing.Pool(debreak_args.thread)
+	for i in range(len(chromosomes)):
+		vcflist+=[readpath.split('/')[-1]+'-'+chromosomes[i]+'.debreak.temp']
+		if not debreak_args.skip_detect:
+			debreak_det.apply_async(debreak_detect.detect_sortbam,args=(readpath,writepath,debreak_args.min_size,debreak_args.max_size,chromosomes[i],chromosomes,record_clip))
+	debreak_det.close()
+	debreak_det.join()
+# Merge deletions & insertions from temp files
+
+
+rawinscall={}; rawdelcall={};  rawdupcall={};  rawinvcall={};  rawtracall={}
+for chrom in chromosomes:
+	rawinscall[chrom]=[];  	rawdelcall[chrom]=[];  	rawdupcall[chrom]=[];  	rawinvcall[chrom]=[];  	rawtracall[chrom]=[]
+for filename in vcflist:
+	try:
+		fvcf=open(writepath+filename,'r')
+	except:
+		continue
+	allvcf=fvcf.read().split('\n')[:-1]
+	for event in allvcf:
+		event_chrom=event.split('\t')[0]
+		if 'I-' in event:
+			event=event.split('\t')
+			rawinscall[event_chrom]+=[event[0]+'\t'+event[1]+'\t'+event[2]+'\t'+event[6]+'\t'+event[4]]
+		if 'D-' in event:
+			event=event.split('\t')
+			rawdelcall[event_chrom]+=[event[0]+'\t'+event[1]+'\t'+event[2]+'\t'+event[6]+'\t'+event[4]]
+		if 'DUP-segment' in event:
+			event=event.split('\t')
+			rawdupcall[event_chrom]+=[event[0]+'\t'+event[1]+'\t'+event[2]+'\t'+event[6]+'\t'+event[4]]
+		if 'INV-segment' in event:
+			event=event.split('\t')
+			rawinvcall[event_chrom]+=[event[0]+'\t'+event[1]+'\t'+event[2]+'\t'+event[6]+'\t'+event[4]]
+		if 'TRA-segment' in event:
+			event=event.split('\t')
+			rawtracall[event_chrom]+=[event[0]+'\t'+event[1]+'\t'+event[2]+'\t'+event[3]+'\t'+event[7]+'\t'+event[5]]
+
+
+# Estimate Depth of input dataset
+if not debreak_args.min_support:
+	if debreak_args.depth:
+		minsupp=round(debreak_args.depth/10.0)+2
+	else:
+		os.system('cat '+writepath+'map_depth/maplength_* > '+writepath+'map_depth/maplength_allchrom_debreak')
+		allmaplength=open(writepath+'map_depth/maplength_allchrom_debreak','r').read().split('\n')[:-1]
+		allmaplength=[int(c) for c in allmaplength]
+		allmaplength=sum(allmaplength)
+		if debreak_args.bam:
+			reflength=sum(pysam.AlignmentFile(debreak_args.bam,'rb').lengths)
+		else:
+			reflength=sum(pysam.AlignmentFile(samlist[0],'r').lengths)
+		depth=float(allmaplength)/reflength
+		minsupp=round(depth/10.0)+2
+		print "Estimated Sequencing Depth: "+str(depth)
+	print "Suggested min_supp:"+str(minsupp)
+else:
+	minsupp=debreak_args.min_support
+
+print 'Wait for merging all chromosmes...'
+
+# Merge all SVs
+debreak_meg=multiprocessing.Pool(debreak_args.thread)
+for i in range(len(chromosomes)):
+	debreak_meg.apply_async(debreak_merge.merge_insertion,args=(minsupp,debreak_args.min_quality,writepath,rawinscall[chromosomes[i]],chromosomes[i],'ins',True,))
+	debreak_meg.apply_async(debreak_merge.merge_deletion,args=(minsupp,min_qual_del,writepath,rawdelcall[chromosomes[i]],chromosomes[i],'del',True,))
+	debreak_meg.apply_async(debreak_merge.merge_deletion,args=(minsupp,debreak_args.min_quality,writepath,rawdupcall[chromosomes[i]],chromosomes[i],'dup',True,))
+	debreak_meg.apply_async(debreak_merge.merge_insertion,args=(minsupp,min_qual_inv,writepath,rawinvcall[chromosomes[i]],chromosomes[i],'inv',True,))
+	debreak_meg.apply_async(debreak_merge.merge_translocation,args=(minsupp,debreak_args.min_quality,writepath,rawtracall[chromosomes[i]],chromosomes[i],True,))
+
+debreak_meg.close()
+debreak_meg.join()
+
+os.system("cat "+writepath+"del-merged-* > "+writepath+"deletion-merged")
+os.system("cat "+writepath+"ins-merged-* > "+writepath+"insertion-merged")
+os.system("cat "+writepath+"dup-merged-* > "+writepath+"duplication-merged")
+os.system("cat "+writepath+"inv-merged-* > "+writepath+"inversion-merged")
+os.system("cat "+writepath+"tra-merged-* > "+writepath+"translocation-merged")
+os.system("rm "+writepath+"*-info-* "+writepath+"*-merged-*")
+print 'All SVs are merged!'
+
+
+'''
+if debreak_args.rescue_dup:
+	if debreak_args.ref:
+		debreak_rescuedupfromins.identify_duplication(vcflist,writepath,minsupp,debreak_args.ref)
+	else:
+		print 'Warning:   No reference provided. Abort duplication rescue.'
+'''
+if debreak_args.rescue_dup:
+	debreak_resdup_selfalignment.identify_duplication(vcflist,writepath)
+
+
+# POA for all SVs
+if debreak_args.poa:
+	print 'Start POA for all SV candidates...'
+	if not debreak_args.ref:
+		print 'Warning:   No reference provided. Abort POA.'
+	else:
+		if debreak_args.bam:
+			debreak_allpoa.poa_bam(debreak_args.bam,writepath,chromosomes,debreak_args.thread,debreak_args.ref,debreak_args.min_size,debreak_args.max_size)
+		else:
+			debreak_allpoa.poa_sam(readpath,samlist,writepath,debreak_args.thread,debreak_args.ref,chromosomes,debreak_args.min_size,debreak_args.max_size)
+
+
+
+
+# Genotyping
+if debreak_args.maxcov:
+	highcov=debreak_args.maxcov
+else:
+	highcov=round(minsupp*50/3.0)
+if debreak_args.no_genotype:
+	if debreak_args.bam:
+		debreak_gt=multiprocessing.Pool(debreak_args.thread)
+		for i in range(len(chromosomes)):
+			debreak_gt.apply_async(debreak_genotype.genotype_filter_del,args=(debreak_args.bam,writepath+'deletion-merged',chromosomes[i],highcov))
+			debreak_gt.apply_async(debreak_genotype.genotype_filter_ins,args=(debreak_args.bam,writepath+'insertion-merged',chromosomes[i],highcov))
+			debreak_gt.apply_async(debreak_genotype.genotype_filter_del,args=(debreak_args.bam,writepath+'duplication-merged',chromosomes[i],highcov))
+			debreak_gt.apply_async(debreak_genotype.genotype_filter_del,args=(debreak_args.bam,writepath+'inversion-merged',chromosomes[i],highcov))
+			debreak_gt.apply_async(debreak_genotype.genotype_filter_tra,args=(debreak_args.bam,writepath+'translocation-merged',chromosomes[i],highcov))
+		debreak_gt.close()
+		debreak_gt.join()
+
+		os.system("cat "+writepath+"*merged-gt* > "+writepath+"debreak-allsv-merged-final")
+		os.system("rm "+writepath+"*merged-gt*")
+		
+	else:
+		os.system("cat "+writepath+"*merged > "+writepath+"debreak-allsv-merged-final")
+		
+else:
+	print 'Start GenoTyping for all SV candidates...'
+	if debreak_args.bam:
+		debreak_gt=multiprocessing.Pool(debreak_args.thread)
+		for i in range(len(chromosomes)):
+			debreak_gt.apply_async(debreak_genotype.genotype_ins,args=(debreak_args.bam,writepath+'insertion-merged',chromosomes[i],highcov))
+			debreak_gt.apply_async(debreak_genotype.genotype_del,args=(debreak_args.bam,writepath+'deletion-merged',chromosomes[i],highcov))
+			debreak_gt.apply_async(debreak_genotype.genotype_del,args=(debreak_args.bam,writepath+'duplication-merged',chromosomes[i],highcov))
+			debreak_gt.apply_async(debreak_genotype.genotype_del,args=(debreak_args.bam,writepath+'inversion-merged',chromosomes[i],highcov))
+			debreak_gt.apply_async(debreak_genotype.genotype_tra,args=(debreak_args.bam,writepath+'translocation-merged',chromosomes[i],highcov))
+		debreak_gt.close()
+		debreak_gt.join()
+
+		os.system("cat "+writepath+"*merged-gt* > "+writepath+"debreak-allsv-merged-final")
+		os.system("rm "+writepath+"*merged-gt*")
+
+	else:
+		os.system("cat "+writepath+"*merged > "+writepath+"debreak-allsv-merged-final")
+		print 'Warning:  No sorted bam file provided. Abort genotyping.'
+
+if record_clip:
+	print 'Start Rescue-Lagre-Ins module...'
+	debreak_rescuelargeins.rescue_ins_bam(debreak_args.bam,chromosomes,writepath,debreak_args.thread,debreak_args.ref,minsupp,debreak_args.min_size,debreak_args.max_size)
+
+
+# Write into vcf file
+debreak_writevcf.writevcf(readpath,writepath,chromosomes,debreak_args.prefix,debreak_args.poa,not debreak_args.no_genotype)
+
