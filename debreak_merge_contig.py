@@ -398,8 +398,7 @@ def  merge_insertion(min_support,min_quality,readpath,samechrom_insertion,chrom,
 def finalsorttra(a):
 	return [a.split('\t')[0],int(a.split('\t')[1])]
 
-def merge_translocation(min_support,min_qual,readpath,samechrom_translocation,chrom,upper_bound):
-	samechrom_translocation=[c for c in samechrom_translocation if float(c.split('\t')[4])>=min_qual]
+def merge_translocation(min_support,readpath,samechrom_translocation,chrom,upper_bound,min_qual):
 	if samechrom_translocation==[]:
 		return True
 	trat1=time.time()
@@ -410,83 +409,18 @@ def merge_translocation(min_support,min_qual,readpath,samechrom_translocation,ch
 
 	translocations.sort(key=finalsorttra)
 	merged_result=[]
-	f=open(readpath+'tra-merged-'+chrom,'w')
-	for d in translocations:
-		f.write(d+'\n')
-		merged_result+=[d]
-	f.close()
+	if translocations!=[]:
+		f=open(readpath+'tra-merged-'+chrom,'w')
+		for d in translocations:
+			if min_qual!=None:
+				if float(d.split('\t')[5])>=min_qual:
+					f.write(d+'\n')
+			else:
+				f.write(d+'\n')
+			merged_result+=[d]
+		f.close()
 	trat2=time.time()
 	print(chrom+'-tra done, time costed: '+str(trat2-trat1))
 	return merged_result
 
 
-if __name__ == "__main__":
-	t1=time.time()
-	#readpath="/data/scratch/maggic/HG002/pacbio/debreak_mt_minimap2_215/test_compound_9.18_wholedebreak/"
-	readpath='/data/scratch/maggic/DeBreak_manuscript/hg002/debreak_testdup/'
-	#readpath='/data/scratch/maggic/HG002/pacbio/debreak_mt_minimap2_215/minsupp5/'
-	#readpath='/data/scratch/maggic/HG002/pacbio/debreak_ccs_merge/'
-	#readpath='/data/scratch/maggic/HG00514/debreak/'
-	#readpath='/data/scratch/maggic/HG002/pacbio/debreak_mt_minimap2_215/test_compound_9.18/'
-	f=open(readpath+'filelist','r')
-	filelist=f.read().split('\n')[:-1]
-	f.close()
-	chromosomes=['chr1','chr2','chr3','chr4','chr5','chr6','chr7','chr8','chr9','chr10','chr11','chr12','chr13','chr14','chr15','chr16','chr17','chr18','chr19','chr20','chr21','chr22','chrX']
-	#chromosomes=['chr1']
-	rawinscall={}
-	rawdelcall={}
-	rawdupcall={}
-	rawinvcall={}
-	rawtracall={}
-	for c in chromosomes:
-		rawinscall[c]=[]
-		rawdelcall[c]=[]
-		rawdupcall[c]=[]
-		rawinvcall[c]=[]
-		rawtracall[c]=[]
-	for d in filelist:
-		f=open(readpath+d,'r')
-		allsvcall=f.read().split('\n')[:-1]
-		for m in allsvcall:
-			if m.split('\t')[0] not in chromosomes:
-				continue
-			if 'I-' in m:
-				m=m.split('\t')
-				rawinscall[m[0]]+=[m[0]+'\t'+m[1]+'\t'+m[2]+'\t'+m[6]+'\t'+m[4]]
-			if 'D-' in m:
-				m=m.split('\t')
-				rawdelcall[m[0]]+=[m[0]+'\t'+m[1]+'\t'+m[2]+'\t'+m[6]+'\t'+m[4]]
-			if 'DUP-' in m:
-				m=m.split('\t')
-				rawdupcall[m[0]]+=[m[0]+'\t'+m[1]+'\t'+m[2]+'\t'+m[6]+'\t'+m[4]]
-			if 'INV-' in m:
-				m=m.split('\t')
-				rawinvcall[m[0]]+=[m[0]+'\t'+m[1]+'\t'+m[2]+'\t'+m[6]+'\t'+m[4]]
-			if 'TRA-' in m:
-				m=m.split('\t')
-				rawtracall[m[0]]+=[m[0]+'\t'+m[1]+'\t'+m[2]+'\t'+m[3]+'\t'+m[7]+'\t'+m[5]]
-	supp=16
-	for c in chromosomes:
-		merge_insertion(supp,0,readpath,rawinscall[c],c,'ins',False)
-		merge_deletion(supp,10,readpath,rawdelcall[c],c,'del',False)
-		#merge_deletion(supp,0,readpath,rawdupcall[c],c,'dup',False)
-		#merge_insertion(supp,0,readpath,rawinvcall[c],c,'inv',False)
-		#merge_translocation(supp,0,readpath,rawtracall[c],c,False)
-	
-	os.system("cat "+readpath+"ins-merged-* > "+readpath+"insertion-merged")
-	os.system("rm "+ readpath +"ins-*")
-	
-	os.system("cat "+readpath+"del-merged-* > "+readpath+"deletion-merged")
-	os.system("rm "+ readpath +"del-*")
-	'''
-	os.system("cat "+readpath+"dup-merged-* > "+readpath+"duplication-merged")
-	os.system("rm "+ readpath +"dup-*")
-	os.system("cat "+readpath+"inv-merged-* > "+readpath+"inversion-merged")
-	os.system("rm "+ readpath +"inv-*")
-	os.system("cat "+readpath+"tra-merged-* > "+readpath+"translocation-merged")
-	os.system("rm "+ readpath +"tra-*")
-	os.system("cat "+readpath+"*merged > "+readpath+"allsv")
-	t2=time.time()
-	print 'Total time used:'+str(t2-t1)
-
-	'''

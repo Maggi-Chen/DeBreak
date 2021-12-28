@@ -3,19 +3,12 @@ import time
 
 def sortsv(a):
 	return [a.split('\t')[0],int(a.split('\t')[1])]
-	'''
-	if 'chrX' in a:
-		return [23,int(a.split('\t')[1])]
-	else:
-		return [int(a.split('\t')[0].split('hr')[1]), int(a.split('\t')[1])]
-	'''
 
 
 def identify_duplication(vcflist,writepath,min_support,refpath):
 	f=open(writepath+'insertion-merged','r')
 	ins=f.read().split('\n')[:-1]
 	f.close()
-	#ins=[c for c in ins if int(c.split('\t')[2])<=2000]
 	insread={}
 	for c in ins:
 		insinfo=c.split('\t')[0]+'_'+c.split('\t')[1]+'_'+c.split('\t')[2]
@@ -154,17 +147,3 @@ def identify_duplication(vcflist,writepath,min_support,refpath):
 	return True
 
 	
-	#os.system("rm -r "+writepath+"debreak_resdup_insertseq/")
-	#os.system("rm -r "+writepath+"debreak_resdup_refseq/")
-	#os.system("rm -r "+writepath+"debreak_resdup_map_space/")
-
-
-
-if __name__ == "__main__":
-	t1=time.time()
-	readpath='/data/scratch/maggic/DeBreak_manuscript/simulation_rep3/debreak_new/'
-	f=open(readpath+'filelist','r')
-	vcflist=f.read().split('\n')[:-1]
-	identify_duplication(vcflist,readpath,5,'/data/user/maggic/svstudy/data/reference/hg38.fa')
-	t2=time.time()
-	print t2-t1

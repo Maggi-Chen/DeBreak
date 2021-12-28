@@ -7,6 +7,8 @@ def genotype_filter_del(samfile,readpath,chrom,highcov):
 	filt='-gt'
 	if chrom!='all':
 		alldel=[c for c in alldel if c.split('\t')[0]==chrom]
+		if alldel==[]:
+			return 0
 		filt='-gt-'+chrom
 	f=open(readpath+filt,'w')
 	for c in alldel:
@@ -15,9 +17,6 @@ def genotype_filter_del(samfile,readpath,chrom,highcov):
 		stop=int(c.split('\t')[2])+start
 		svsize=int(c.split('\t')[2])
 		numsupp=int(c.split('\t')[3])
-		#if numsupp > highcov:
-			#f.write(c+'\tHighCov\n')
-		#	continue
 		leftcov=samfile.count(chrom,start-150,start-50)
 		if leftcov>highcov*2:
 			continue
@@ -40,6 +39,8 @@ def genotype_del(samfile,readpath,chrom,highcov):
 	filt='-gt'
 	if chrom!='all':
 		alldel=[c for c in alldel if c.split('\t')[0]==chrom]
+		if alldel==[]:
+			return 0
 		filt='-gt-'+chrom
 	
 	f=open(readpath+filt,'w')
@@ -83,6 +84,8 @@ def genotype_filter_ins(samfile,readpath,chrom,highcov):
 	filt='-gt'
 	if chrom!='all':
 		alldel=[c for c in alldel if c.split('\t')[0]==chrom]
+		if alldel==[]:
+			return 0
 		filt='-gt-'+chrom
 	f=open(readpath+filt,'w')
 	for c in alldel:
@@ -114,6 +117,8 @@ def genotype_ins(samfile,readpath,chrom,highcov):
 	filt='-gt'
 	if chrom!='all':
 		alldel=[c for c in alldel if c.split('\t')[0]==chrom]
+		if alldel==[]:
+			return 0
 		filt='-gt-'+chrom
 	f=open(readpath+filt,'w')
 
@@ -192,6 +197,8 @@ def genotype_filter_tra(samfile,readpath,chrom,highcov):
 	if chrom!='all':
 		filt='-gt-'+chrom
 		alldel=[c for c in alldel if c.split('\t')[0]==chrom]
+		if alldel==[]:
+			return 0
 	f=open(readpath+filt,'w')
 	for c in alldel:
 		chr1=c.split('\t')[0]
@@ -231,6 +238,8 @@ def genotype_tra(samfile,readpath,chrom,highcov):
 	if chrom!='all':
 		alldel=[c for c in alldel if c.split('\t')[0]==chrom]
 		filt='-gt-'+chrom
+		if alldel==[]:
+			return 0
 	f=open(readpath+filt,'w')
 	for c in alldel:
 		chr1=c.split('\t')[0]
@@ -269,34 +278,4 @@ def genotype_tra(samfile,readpath,chrom,highcov):
 		
 	return True
 
-if __name__ =="__main__":
-	#readpath='/data/scratch/maggic/HG002/pacbio/debreak_ccs_merge/new1.75cutoff/'
-	#samfile='/data/scratch/maggic/HG002/pacbio/ccs_merge/merged.sort.bam'
 
-	##readpath='/data/scratch/maggic/HG00514/debreak/'
-	#samfile='/data/scratch/maggic/HG00514/minimap2/merged.sort.bam'
-	readpath='/data/scratch/maggic/HG002/pacbio/debreak_mt_minimap2_215/test_compound_9.18_wholedebreak/'
-	samfile='/data/scratch/maggic/HG002/pacbio/alignment_mt_minimap2_215/merged.sort.bam'
-
-	highcov=150
-	t1=time.time()
-	#genotype_del(samfile,readpath+'deletion-merged','all',highcov,)
-	t2=time.time()
-	print t2-t1
-	genotype_ins(samfile,readpath+'insertion-merged','all',highcov,)
-	t3=time.time()
-	#print t3-t2
-	'''
-	genotype_del(samfile,readpath+'duplication-merged-new','all',highcov,)
-	t4=time.time()
-	print t4-t3
-	genotype_del(samfile,readpath+'inversion-merged-new','all',highcov,)
-	t5=time.time()
-	print t5-t4
-	
-	t5=time.time()
-
-	genotype_tra(samfile,readpath+'translocation-merged-new','all',highcov,)
-	t6=time.time()
-	print t6-t5
-	'''

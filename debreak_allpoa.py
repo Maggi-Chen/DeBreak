@@ -107,6 +107,7 @@ def merge_ctgfa(writepath):
 			for cc in ctg1[1:]:
 				seq1+=cc
 			allfasta.write('>'+name1+'\n'+seq1+'\n')
+		os.system("rm "+ctgfile)
 	allfasta.close()
 	return True
 
@@ -128,7 +129,6 @@ def correct_bp(writepath):
 	allinv=[c for c in allsv if 'Inv' in c]
 	alltra=[c for c in allsv if 'Tra' in c]
 	for c in allsv_poa:
-		#print len(accuratesv)
 		if '.2' in c.split('\t')[4]:
 			continue
 		allsvs=[]
@@ -219,10 +219,10 @@ def poa_bam(bampath,writepath,chromosomes,threads,ref,min_size,max_size):
 	#os.system("rm "+writepath+"debreak_poa_workspace/*wtdbg*")
 	os.system("minimap2 -a "+ref+"  "+writepath+"debreak_poa_workspace/allfasta -t "+str(threads)+" > "+writepath+"debreak_poa_workspace/allsvpoa.sam ")
 		
-	debreak_detect.detect_sam("debreak_poa_workspace/allsvpoa.sam",writepath,writepath,chromosomes,min_size,max_size,False)
+	debreak_detect.detect_sam("debreak_poa_workspace/allsvpoa.sam",writepath,writepath,chromosomes,min_size,max_size,False,False)
 	
 	correct_bp(writepath)
-	#os.system("rm -r "+writepath+"debreak_poa_workspace/")	
+	os.system("rm -r "+writepath+"debreak_poa_workspace/")	
 	return True
 	
 
@@ -236,7 +236,7 @@ def abortable_call_wtdbg2(svevent):
 		testout = testres.get(timeout)  # Wait timeout seconds for func to complete.
 		return testout
 	except multiprocessing.TimeoutError:
-		#print("Aborting due to timeout")
+		print("Aborting due to timeout")
 		raise
 
 
@@ -268,19 +268,10 @@ def poa_sam(readpath,samlist,writepath,threads,ref,chromosomes,min_size,max_size
 	merge_ctgfa(writepath)
 	os.system("minimap2 -a "+ref+"  "+writepath+"debreak_poa_workspace/allfasta --secondary=no -t "+str(threads)+" > "+writepath+"debreak_poa_workspace/allsvpoa.sam ")
 	
-	debreak_detect.detect_sam("debreak_poa_workspace/allsvpoa.sam",writepath,writepath,chromosomes,min_size,max_size,False)
+	debreak_detect.detect_sam("debreak_poa_workspace/allsvpoa.sam",writepath,writepath,chromosomes,min_size,max_size,False,False)
 	correct_bp(writepath)
 	os.system("rm -r "+writepath+"debreak_poa_workspace/")
 
 	return True
 
 
-if __name__ =="__main__":
-	bampath='/data/scratch/maggic/simulation/svsimulation/all_type_rep1/ngmlr/merged.sort.bam'
-	writepath='/data/scratch/maggic/DeBreak_manuscript/simulation_other_aligner/ngmlr/debreak_test/'
-	#poa_bam('',writepath,[],1,'',45,40000000)
-	chroms=['chr1','chr2','chr3','chr4','chr5','chr6','chr7','chr8','chr9','chr10','chr11','chr12','chr13','chr14','chr15','chr16','chr17','chr18','chr19','chr20','chr21','chr22','chrX']
-	#debreak_detect.detect_sam("debreak_poa_workspace/allsvpoa.hg19.filtered.sam",writepath,writepath,[],45,40000000)
-	#correct_bp(writepath)
-	ref='/data/user/maggic/svstudy/data/reference/hg38.fa'
-	poa_bam(bampath,writepath,['chr20'],2,ref,45,4000000)

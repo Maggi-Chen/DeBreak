@@ -174,7 +174,7 @@ def rescue_ins_bam(bampath,chromosomes,writepath,threads,refpath,min_supp,min_si
 	
 	os.system('minimap2 -a -t '+str(threads)+' '+refpath+' --secondary=no '+writepath+'debreak_ins_workspace/debreak_rescuelargeins_merged.fa  > '+writepath+'debreak_ins_workspace/debreak_rescuelargeins_merged.sam ')
 	
-	debreak_detect.detect_sam('debreak_rescuelargeins_merged.sam',writepath+'debreak_ins_workspace/',writepath+'debreak_ins_workspace/',chromosomes,min_size,max_size,False)
+	debreak_detect.detect_sam('debreak_rescuelargeins_merged.sam',writepath+'debreak_ins_workspace/',writepath+'debreak_ins_workspace/',chromosomes,min_size,max_size,False,False)
 	
 	allsv=open(writepath+'debreak_ins_workspace/debreak_rescuelargeins_merged.debreak.temp','r').read().split('\n')[:-1]
 	allins=[c for c in allsv if 'I-' in c and int(c.split('\t')[2])>=1000]
@@ -224,22 +224,4 @@ def rescue_ins_bam(bampath,chromosomes,writepath,threads,refpath,min_supp,min_si
 def sort_ins(a):
 	return [a.split('\t')[0],int(a.split('\t')[1])]
 
-if __name__ =="__main__":
 
-	chromosomes=['chr1','chr2','chr3','chr4','chr5','chr6','chr7','chr8','chr9','chr10','chr11','chr12','chr13','chr14','chr15','chr16','chr17','chr18','chr19','chr20','chr21','chr22','chrX']
-	print len(chromosomes)
-	for c in chromosomes:
-		find_candi_ins_bp('/data/scratch/maggic/DeBreak_manuscript/simulation/debreak_testwhole/',c,7)
-	#find_candi_ins_bp('/data/scratch/maggic/DeBreak_manuscript/simulation/debreak_testwhole/','chr1',7)
-
-	quit()
-
-	bampath='/data/scratch/maggic/skbr3/newseq/minimap2-sam-hg19-2.15/merged.sort.bam'
-	chromosomes=['chr1','chr2','chr3','chr4','chr5','chr6','chr7','chrX','chr8','chr9','chr10','chr11','chr12','chr13','chr14','chr15','chr16','chr17','chr18','chr19','chr20','chr21','chr22']
-	chromosomes=pysam.AlignmentFile('/data/scratch/maggic/HG002/pacbio/ccs_merge/merged.sort.bam','rb').references
-	writepath='/data/scratch/maggic/DeBreak_manuscript/hg002/debreak_ccs_default/'
-	threads=2
-	refpath='/data/user/maggic/svstudy/data/reference/hg19.fa'
-	min_supp=8
-	rescue_ins_bam(bampath,chromosomes,writepath,threads,refpath,min_supp,45,40000000)
-	

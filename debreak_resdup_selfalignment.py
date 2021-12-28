@@ -32,30 +32,28 @@ def identify_duplication(vcflist,writepath):
 		readnames=sv.split('\t')[6].split(';')
 		for d in readnames:
 			insread[d]=insinfo
-
 	os.system("mkdir "+writepath+"debreak_resdup_insertseq/")
 	os.system("mkdir "+writepath+"debreak_resdup_refseq/")
 	os.system("mkdir "+writepath+"debreak_resdup_map_space/")
 	
  	for vcffile in vcflist:
- 		f=open(writepath+vcffile,'r')
- 		a=f.readline()
- 		while a!='':
- 			if 'I-cigar' not in a or a.split('\t')[4] not in insread:
+		f=open(writepath+'sv_raw_calls/'+vcffile,'r')
+		a=f.readline()
+		while a!='':
+			if 'I-cigar' not in a or a.split('\t')[4] not in insread:
 				a=f.readline(); continue
 			readname=a.split('\t')[4]
 			insinfo=insread[readname]
- 			g=open(writepath+'debreak_resdup_insertseq/'+insinfo+'.fa','a')
- 			insseq=a.split('\t')[8]
- 			g.write('>'+readname+'\n'+insseq+'\n')
+			g=open(writepath+'debreak_resdup_insertseq/'+insinfo+'.fa','a')
+			insseq=a.split('\t')[8]
+			g.write('>'+readname+'\n'+insseq+'\n')
 			g.close()
 			g=open(writepath+'debreak_resdup_refseq/'+insinfo+'.fa','a')
 			readseq=a.split('\t')[9]
 			bppos=a.split('\t')[7]
 			g.write('>'+readname+'DeBreak'+bppos+'\n'+readseq+'\n')
- 			a=f.readline()
+			a=f.readline()
 		f.close()
-	
 	rescueddup=[]
 	trueins=[]
 	ff=open(writepath+'debreak_resdup_map_space/maprateinfo','w')
@@ -89,13 +87,5 @@ def identify_duplication(vcflist,writepath):
 
 	return 0
 	
-
-if __name__ =="__main__":
-	t1=time.time()
-	vcflist=open('/data/scratch/maggic/DeBreak_manuscript/simulation_rep1/debreak_newdetect/filelist','r').read().split('\n')[:-1]
-	writepath='/data/scratch/maggic/DeBreak_manuscript/simulation_rep1/debreak_newdetect/'
-	identify_duplication(vcflist,writepath)
-	t2=time.time()
-	print t2-t1
 
 
