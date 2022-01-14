@@ -1,4 +1,4 @@
-# Inspector
+# DeBreak
 
 A SV caller for long-read single-molecular sequencing data.
 
@@ -29,15 +29,15 @@ debreak --bam merged.sort.bam --outpath debreak_out/ --rescue_large_ins --poa --
 
 ## Description
 
-DeBreak is a tool for SV discovery with long read data. The input should be a sorted BAM (PacBio CLR, PacBio HiFi, Oxford Nanopore, or mixed platform). The reference genome is also needed when enabling ultra-large insertion identification. The output is a standard VCF file containing all SVs that have passed filters. This program was tested on a x86_64 Linux system with a 128GB physical memory.
+DeBreak is a tool for SV discovery with long read data. The input should be a sorted BAM (PacBio CLR, PacBio HiFi, Oxford Nanopore, or mixed platform). The reference genome is also needed when enabling full functions. The output is a standard VCF file containing all SVs that have passed filters. This program was tested on a x86_64 Linux system with a 128GB physical memory.
+
 
 ## Depencency
 
 Dependencies for DeBreak:
 
-python 2.7  
-* pysam
-
+* python 2.7  
+* pysam  (tested with version 0.17.0)
 * minimap2  (tested with version 2.10 and 2.15)
 * wtdbg2  (tested with version 2.5)
 
@@ -46,11 +46,11 @@ python 2.7
 ## Installation
 
 ```
-git clone https://github.com/Maggi-Chen/Inspector.git
+git clone https://github.com/Maggi-Chen/DeBreak.git
 ```
 Then, please also add this directory to your PATH:
 ```
-export PATH=$PWD/Inspector/:$PATH
+export PATH=$PWD/DeBreak/:$PATH
 ```
 
 
@@ -78,7 +78,6 @@ debreak --bam testdata/test_read.bam -o test_out/ --poa --rescue_large_ins --res
 
 
 ```
-
 debreak [-h] --bam <sort.bam>
 
 SV caller for long-read sequencing data
@@ -109,26 +108,26 @@ optional arguments:
 ```
 
 ## Use cases
-DeBreak requires a input of read alignment results in BAM format. If you start with sequencing reads (Fasta or Fastq format), you may use minimap2 and samtools to map them to a reference genome before you can apply DeBreak.
+DeBreak requires a input of read alignment results in BAM format. If you start with sequencing reads (Fasta or Fastq format), you may use minimap2 and samtools to map them to a reference genome before you can apply DeBreak:
 ```
 minimap2 -a reference.fa  movie1.fastq | samtools sort -o movie1.bam
 minimap2 -a reference.fa  movie2.fastq | samtools sort -o movie2.bam
 ...
-samtools merge merged.sort.bam  movie*.bam
+samtools merge merged.sort.bam  movie1.bam movie2.bam
 samtools index merged.sort.bam
 ```
 
-DeBreak can be applied with full function:
+DeBreak can be applied with full function (with accurate SV breakpoints):
 ```
-debreak --bam merged.sort.bam --outpath debreak_out/ --rescue_large_ins --rescue_dup --poa --ref hg38.fa
+debreak --bam merged.sort.bam -o debreak_out/ --rescue_large_ins --rescue_dup --poa --ref hg38.fa
 ```
 Or with only basic functions to quickly call SVs (without accurate SV breakpoints, may miss some large insertions):
 ```
-debreak --bam merged.sort.bam --outpath debreak_out/
+debreak --bam merged.sort.bam -o debreak_out/
 ```
 
 ### Options of Debreak
-#### --min_support, minimal number of supporting reads
+#### 1. --min_support, minimal number of supporting reads
 min_support is the most important argument for SV filtering of DeBreak. It should be adjusted according to sequencing depth of input BAM.
 Without given min_support/depth information, DeBreak estimates the depth of input dataset to assign a resonable min_support.
 ```
@@ -152,14 +151,14 @@ If you specify coverage of dataset with --depth, DeBreak will calculate min_supp
 debreak --bam merged.sort.bam -o debreak_out/ --depth 70
 ```
 
-#### --poa, partial order alignment for SV breakpoint refinement
+#### 2. --poa, partial order alignment for SV breakpoint refinement
 This option calls POA module of DeBreak. minimap2, wtdbg2, and reference genome are required.
 After clustering and filtering SV calls, DeBreak collects all SV-containing reads for each SV candidate and performs POA with wtdbg2 to generate a consensus sequence with higher base accuracy. It then maps consensus sequences to reference genome and infers precise SV breakpoint positions.
 ```
 debreak --bam merged.sort.bam -o debreak_out/ --poa --ref reference.fa
 ```
 
-#### --rescue_large_ins, detect large insertions using local de novo assembly
+#### 3. --rescue_large_ins, detect large insertions using local de novo assembly
 This option calls rescue_large_insertion module of DeBreak to identify insertions that are longer than the sequencing reads. minimap2, wtdbg2, and reference genome are required. 
 DeBreak scans whole genome for read alignments with clipped end. It identifies candidate insertion breakpoints with enriched clipped alignments, and performs local de novo assembly at each candidate insertion site.
 minimap2 is used to map all assembled contigs to the reference. DeBreak then detects ultra-large insertions from the contig alignment results.
@@ -167,13 +166,19 @@ minimap2 is used to map all assembled contigs to the reference. DeBreak then det
 debreak --bam merged.sort.bam -o debreak_out/ --rescue_large_ins --ref reference.fa
 ```
 
-#### --rescue_dup, rescue duplications that are falsely considered as insertions
+#### 4. --rescue_dup, rescue duplications that are falsely considered as insertions
 This option calls rescue_duplication module of DeBreak. minimap2 and reference genome are required.
 This module maps inserted sequence of each insertion call back to local region near insertion breakpoint. If the inserted sequence can be properly mapped, it suggests that this is a duplication instead of novel insertion.
 ```
 debreak --bam merged.sort.bam -o debreak_out/ --rescue_dup --ref reference.fa
 ```
 
+
+#### 5. --tumor, tumor mode for cancer genomes
+This option sets looser criteria during SV raw signal detection, allowing identification of potentially closer SV breakpoints in complex rearrangements. 
+```
+debreak --bam tumor.sort.bam -o debreak_out/ --tumor
+```
 
 
 ## Output files
