@@ -37,7 +37,7 @@ DeBreak is a tool for SV discovery with long read data. The input should be a so
 Dependencies for DeBreak:
 
 * python 2.7  
-* pysam  (tested with version 0.17.0)
+* pysam  (tested with version 0.16.0)
 * minimap2  (tested with version 2.10 and 2.15)
 * wtdbg2  (tested with version 2.5)
 
@@ -66,12 +66,12 @@ conda install -c bioconda wtdbg=2.5
 
 ```
 
-A test dataset is available to verify successful installation:
+A test simulated dataset is available to verify successful installation:
 ```
 cd DeBreak/
 debreak --bam testdata/test_read.bam -o test_out/ --poa --rescue_large_ins --rescue_dup --ref testdata/test_ref.fa
 ```
-(The DeBreak SV discovery on test dataset should finish within several minutes with 4 CPUs and 400MB memory.)
+The DeBreak SV discovery on test dataset should finish within several minutes with 4 CPUs and 400MB memory. The expected SV callset is testdata/debreak.vcf, with 6 SVs in total.
 
 
 ## General usage
