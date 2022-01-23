@@ -66,12 +66,13 @@ conda install -c bioconda wtdbg=2.5
 
 ```
 
-A test simulated dataset is available to verify successful installation:
+A test simulated dataset (450Kbp genome with 6 SV embedded) is available to verify successful installation:
 ```
 cd DeBreak/
-debreak --bam testdata/test_read.bam -o test_out/ --poa --rescue_large_ins --rescue_dup --ref testdata/test_ref.fa
+debreak --bam testdata/test_read.bam -o test_out/ --poa --rescue_large_ins \
+--rescue_dup --ref testdata/test_ref.fa
 ```
-The DeBreak SV discovery on test dataset should finish within several minutes with 4 CPUs and 400MB memory. The expected SV callset is testdata/debreak.vcf, with 6 SVs in total.
+The DeBreak SV discovery on test dataset should finish within 1 minute with 4 CPUs and 400MB memory. The output SV callset should be the same with testdata/debreak.vcf. 
 
 
 ## General usage
