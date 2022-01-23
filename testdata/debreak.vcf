@@ -1,0 +1,28 @@
+##fileformat=VCFv4.2
+##source=DeBreak
+##fileDate=2022-01-23
+##ALT=<ID=DEL,Description="Deletion">
+##ALT=<ID=INS,Description="Insertion">
+##ALT=<ID=DUP,Description="Duplication">
+##ALT=<ID=INV,Description="Inversion">
+##ALT=<ID=TRA,Description="Translocation">
+##INFO=<ID=CHR2,Number=1,Type=String,Description="Chromosome for END coordinate in case of a translocation">
+##INFO=<ID=END,Number=1,Type=Integer,Description="End position of the structural variant">
+##INFO=<ID=MAPQ,Number=1,Type=Integer,Description="Mean mapping quality of supporting reads">
+##INFO=<ID=SUPPREAD,Number=1,Type=Integer,Description="number of supporting reads">
+##INFO=<ID=PRECISE,Number=0,Type=Flag,Description="Variant with precise breakpoint position from POA">
+##INFO=<ID=SVLEN,Number=1,Type=Integer,Description="Length of the SV">
+##INFO=<ID=SVMETHOD,Number=1,Type=String,Description="Type of approach used to detect SV">
+##INFO=<ID=SVTYPE,Number=1,Type=String,Description="Type of structural variant">
+##INFO=<ID=MULTI,Number=0,Type=Flag,Description="If the SV is multi-allelic SV">
+##INFO=<ID=LARGEINS,Number=0,Type=Flag,Description="Large insertion indentified from local assembly">
+##INFO=<ID=START2,Number=1,Type=Integer,Description="SV start position on the second haplotype of multi-allilic SV">
+##INFO=<ID=END2,Number=1,Type=Integer,Description="SV end position on the second haplotype of multi-allilic SV">
+##INFO=<ID=SVLEN2,Number=1,Type=Integer,Description="SV length on the second haplotype of multi-allilic SV">
+#CHROM	POS	ID	REF	ALT	QUAL	FILTER	INFO	FORMAT	/data/project/chonglab/Maggic/simulation/debreak_testdata/test_read.bam
+chr1	99998	db1	N	<DEL>	.	PASS	PRECISE;SVMETHOD=DeBreak_1.0;CHR2=chr1;END=100198;SVTYPE=DEL;SVLEN=200;SUPPREAD=54;MAPQ=60.0	GT	1/1
+chr1	150000	db2	N	<DEL>	.	PASS	PRECISE;SVMETHOD=DeBreak_1.0;CHR2=chr1;END=151000;SVTYPE=DEL;SVLEN=1000;SUPPREAD=44;MAPQ=60.0	GT	1/1
+chr1	199999	db3	N	<INS>	.	PASS	PRECISE;SVMETHOD=DeBreak_1.0;CHR2=chr1;END=200000;SVTYPE=INS;SVLEN=151;SUPPREAD=45;MAPQ=60.0	GT	1/1
+chr1	250000	db4	N	<INS>	.	PASS	PRECISE;SVMETHOD=DeBreak_1.0;CHR2=chr1;END=250001;SVTYPE=INS;SVLEN=1199;SUPPREAD=45;MAPQ=60.0	GT	1/1
+chr1	300000	db5	N	<INV>	.	PASS	PRECISE;SVMETHOD=DeBreak_1.0;CHR2=chr1;END=301503;SVTYPE=INV;SVLEN=1503;SUPPREAD=44;MAPQ=59.0	GT	1/1
+chr1	350000	db6	N	<DUP>	.	PASS	PRECISE;SVMETHOD=DeBreak_1.0;CHR2=chr1;END=351400;SVTYPE=DUP;SVLEN=1400;SUPPREAD=61;MAPQ=60.0	GT	1/1
