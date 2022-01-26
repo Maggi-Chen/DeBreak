@@ -10,9 +10,7 @@ Draft date: Jan. 12, 2022
 
 ## Quick Start
 ```sh
-git clone https://github.com/Maggi-Chen/DeBreak.git
-cd DeBreak/
-./debreak -h
+conda install -c bioconda debreak
 
 # quick SV calling with sorted bam
 debreak --bam merged.sort.bam --outpath debreak_out/
@@ -38,39 +36,34 @@ Dependencies for DeBreak:
 
 * python 2.7  
 * pysam  (tested with version 0.16.0)
-* minimap2  (tested with version 2.10 and 2.15)
+* minimap2  (tested with version 2.15)
 * wtdbg2  (tested with version 2.5)
 
 
 
 ## Installation
 
+To simplify the environment setup process, conda is recommended.
+```
+conda create --name deb python=2.7
+conda activate deb
+conda install -c bioconda debreak
+
+```
+
+Git install after installing all the dependencies.
 ```
 git clone https://github.com/Maggi-Chen/DeBreak.git
-```
-Then, please also add this directory to your PATH:
-```
 export PATH=$PWD/DeBreak/:$PATH
 ```
 
 
-To simplify the environment setup process, Anaconda2 (https://www.anaconda.com/) is recommended.
-To create an environment with conda:
-```
-conda create --name deb python=2.7
-conda activate deb
-conda install -c bioconda minimap2=2.15
-conda install -c bioconda samtools=1.9
-conda install -c bioconda pysam=0.16.0.1
-conda install -c bioconda wtdbg=2.5
-
-```
 
 A test simulated dataset (450Kbp genome with 6 SV embedded) is available to verify successful installation:
 ```
-cd DeBreak/
-debreak --bam testdata/test_read.bam -o test_out/ --poa --rescue_large_ins \
---rescue_dup --ref testdata/test_ref.fa
+git clone https://github.com/Maggi-Chen/DeBreak.git
+debreak --bam DeBreak/testdata/test_read.bam -o test_out/ --poa --rescue_large_ins \
+--rescue_dup --ref DeBreak/testdata/test_ref.fa
 ```
 The DeBreak SV discovery on test dataset should finish within 1 minute with 4 CPUs and 400MB memory. The output SV callset should be the same with testdata/debreak.vcf. 
 
