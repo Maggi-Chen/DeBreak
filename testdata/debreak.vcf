@@ -1,28 +1,32 @@
 ##fileformat=VCFv4.2
+##FILTER=<ID=PASS,Description="All filters passed">
 ##source=DeBreak
-##fileDate=2022-01-23
+##fileDate=2022-05-04
+##contig=<ID=chr1,length=450000>
 ##ALT=<ID=DEL,Description="Deletion">
 ##ALT=<ID=INS,Description="Insertion">
 ##ALT=<ID=DUP,Description="Duplication">
 ##ALT=<ID=INV,Description="Inversion">
 ##ALT=<ID=TRA,Description="Translocation">
-##INFO=<ID=CHR2,Number=1,Type=String,Description="Chromosome for END coordinate in case of a translocation">
+##INFO=<ID=CHR2,Number=1,Type=String,Description="Chromosome for END">
 ##INFO=<ID=END,Number=1,Type=Integer,Description="End position of the structural variant">
 ##INFO=<ID=MAPQ,Number=1,Type=Integer,Description="Mean mapping quality of supporting reads">
-##INFO=<ID=SUPPREAD,Number=1,Type=Integer,Description="number of supporting reads">
-##INFO=<ID=PRECISE,Number=0,Type=Flag,Description="Variant with precise breakpoint position from POA">
+##INFO=<ID=SUPPREAD,Number=1,Type=Integer,Description="Number of supporting reads">
 ##INFO=<ID=SVLEN,Number=1,Type=Integer,Description="Length of the SV">
 ##INFO=<ID=SVMETHOD,Number=1,Type=String,Description="Type of approach used to detect SV">
 ##INFO=<ID=SVTYPE,Number=1,Type=String,Description="Type of structural variant">
+##INFO=<ID=PRECISE,Number=0,Type=Flag,Description="Variant with precise breakpoint position from POA">
 ##INFO=<ID=MULTI,Number=0,Type=Flag,Description="If the SV is multi-allelic SV">
 ##INFO=<ID=LARGEINS,Number=0,Type=Flag,Description="Large insertion indentified from local assembly">
 ##INFO=<ID=START2,Number=1,Type=Integer,Description="SV start position on the second haplotype of multi-allilic SV">
 ##INFO=<ID=END2,Number=1,Type=Integer,Description="SV end position on the second haplotype of multi-allilic SV">
 ##INFO=<ID=SVLEN2,Number=1,Type=Integer,Description="SV length on the second haplotype of multi-allilic SV">
-#CHROM	POS	ID	REF	ALT	QUAL	FILTER	INFO	FORMAT	/data/project/chonglab/Maggic/simulation/debreak_testdata/test_read.bam
-chr1	99998	db1	N	<DEL>	.	PASS	PRECISE;SVMETHOD=DeBreak_1.0;CHR2=chr1;END=100198;SVTYPE=DEL;SVLEN=200;SUPPREAD=54;MAPQ=60.0	GT	1/1
-chr1	150000	db2	N	<DEL>	.	PASS	PRECISE;SVMETHOD=DeBreak_1.0;CHR2=chr1;END=151000;SVTYPE=DEL;SVLEN=1000;SUPPREAD=44;MAPQ=60.0	GT	1/1
-chr1	199999	db3	N	<INS>	.	PASS	PRECISE;SVMETHOD=DeBreak_1.0;CHR2=chr1;END=200000;SVTYPE=INS;SVLEN=151;SUPPREAD=45;MAPQ=60.0	GT	1/1
-chr1	250000	db4	N	<INS>	.	PASS	PRECISE;SVMETHOD=DeBreak_1.0;CHR2=chr1;END=250001;SVTYPE=INS;SVLEN=1199;SUPPREAD=45;MAPQ=60.0	GT	1/1
-chr1	300000	db5	N	<INV>	.	PASS	PRECISE;SVMETHOD=DeBreak_1.0;CHR2=chr1;END=301503;SVTYPE=INV;SVLEN=1503;SUPPREAD=44;MAPQ=59.0	GT	1/1
-chr1	350000	db6	N	<DUP>	.	PASS	PRECISE;SVMETHOD=DeBreak_1.0;CHR2=chr1;END=351400;SVTYPE=DUP;SVLEN=1400;SUPPREAD=61;MAPQ=60.0	GT	1/1
+##FORMAT=<ID=GT,Number=1,Type=String,Description="Genotype">
+##CommandLine=debreak --bam testdata/test_read.bam --ref testdata/test_ref.fa -o testout/ --poa --rescue_large_ins --rescue_dup
+#CHROM	POS	ID	REF	ALT	QUAL	FILTER	INFO	FORMAT	testdata/test_read.bam
+chr1	99999	DB1	N	<NON_REF>	.	PASS	END=100196;CHR2=chr1;SVLEN=198;SUPPREAD=54;MAPQ=60;SVMETHOD=DeBreak;SVTYPE=DEL	GT	1/1
+chr1	149923	DB2	N	<NON_REF>	.	PASS	END=150879;CHR2=chr1;SVLEN=957;SUPPREAD=44;MAPQ=59;SVMETHOD=DeBreak;SVTYPE=DEL	GT	1/1
+chr1	349999	DB3	N	<NON_REF>	.	PASS	END=351397;CHR2=chr1;SVLEN=1399;SUPPREAD=61;MAPQ=59;SVMETHOD=DeBreak;SVTYPE=DUP	GT	1/1
+chr1	199999	DB4	N	<NON_REF>	.	PASS	END=199999;CHR2=chr1;SVLEN=157;SUPPREAD=45;MAPQ=60;SVMETHOD=DeBreak;SVTYPE=INS	GT	1/1
+chr1	250000	DB5	N	<NON_REF>	.	PASS	END=250000;CHR2=chr1;SVLEN=1257;SUPPREAD=45;MAPQ=60;SVMETHOD=DeBreak;SVTYPE=INS	GT	1/1
+chr1	300000	DB6	N	<NON_REF>	.	PASS	END=301505;CHR2=chr1;SVLEN=1506;SUPPREAD=44;MAPQ=59;SVMETHOD=DeBreak;SVTYPE=INV	GT	1/1
