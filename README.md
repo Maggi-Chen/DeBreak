@@ -34,8 +34,8 @@ DeBreak is a tool for SV discovery with long read data. The input should be a so
 
 Dependencies for DeBreak:
 
-* python 2.7  
-* pysam  (tested with version 0.16.0)
+* python3
+* pysam  (tested with version 0.19.0)
 * minimap2  (tested with version 2.15)
 * wtdbg2  (tested with version 2.5)
 
@@ -43,20 +43,19 @@ Dependencies for DeBreak:
 
 ## Installation
 
-To simplify the environment setup process, conda is recommended.
+To simplify the environment setup process, conda is recommended:
 ```
-conda create --name deb python=2.7
+conda create --name deb
 conda activate deb
 conda install -c bioconda debreak
 
 ```
 
-Git install after installing all the dependencies.
+Or use Git to install after installing all the dependencies:
 ```
 git clone https://github.com/Maggi-Chen/DeBreak.git
 export PATH=$PWD/DeBreak/:$PATH
 ```
-
 
 
 A test simulated dataset (450Kbp genome with 6 SV embedded) is available to verify successful installation:
