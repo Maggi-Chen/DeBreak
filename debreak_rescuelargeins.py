@@ -185,7 +185,7 @@ def rescue_ins_bam(bampath,chromosomes,writepath,threads,refpath,min_supp,min_si
 	for c in allins:
 		testif=0
 		for d in oldinscalls:
-			if c.split('\t')[0]==d.split('\t')[0] and abs(int(c.split('\t')[1])-int(d.split('\t')[1]))<=500 and 0.7<=float(c.split('\t')[2])//float(d.split('\t')[2])<=1.43:
+			if c.split('\t')[0]==d.split('\t')[0] and abs(int(c.split('\t')[1])-int(d.split('\t')[1]))<=500 and 0.7<=float(c.split('\t')[2])/float(d.split('\t')[2])<=1.43:
 				testif=1; break
 		if testif==0:
 			c=c.split('\t')

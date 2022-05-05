@@ -175,7 +175,7 @@ if not debreak_args.min_support:
 			reflength=sum(pysam.AlignmentFile(samlist[0],'r').lengths)
 		depth=float(allmaplength)/reflength
 		minsupp=round(depth/10.0)+2
-		logfile("Estimated Sequencing Depth: "+str(depth)+'\n')
+		logfile.write("Estimated Sequencing Depth: "+str(depth)+'\n')
 	logfile.write("Suggested min_supp:"+str(minsupp)+'\n')
 else:
 	minsupp=debreak_args.min_support
@@ -191,7 +191,7 @@ else:
 		else:
 			reflength=sum(pysam.AlignmentFile(samlist[0],'r').lengths)
 		depth=float(allmaplength)/reflength
-		logfile("Estimated Sequencing Depth: "+str(depth)+'\n')
+		logfile.write("Estimated Sequencing Depth: "+str(depth)+'\n')
 	logfile.write("Using input min_supp:"+str(minsupp)+'\n')
 
 
