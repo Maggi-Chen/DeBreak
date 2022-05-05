@@ -39,13 +39,13 @@ def find_candi_ins_bp(writefilepath,chrom,minsupp):
 			startc=startc[len(allcandi):]
 		else:
 			startc=startc[len(allcandi):]
-			medean=allcandi[len(allcandi)/2]
+			medean=allcandi[len(allcandi)//2]
 			allcandi=[c for c in allcandi if medean-1000<=c<=medean+1000]
 			if 1*minsupp<=len(allcandi)<=minsupp*20:
-				medean=sum(allcandi)/len(allcandi)
+				medean=sum(allcandi)//len(allcandi)
 				startcandi+=[[medean,len(allcandi)]]
 	
-	print 'clean start of '+chrom
+	print ('clean start of '+chrom)
 	while stopc!=[]:
 		start=stopc[0]
 		allcandi=[]
@@ -58,12 +58,12 @@ def find_candi_ins_bp(writefilepath,chrom,minsupp):
 			stopc=stopc[len(allcandi):]
 		else:
 			stopc=stopc[len(allcandi):]
-			medean=allcandi[len(allcandi)/2]
+			medean=allcandi[len(allcandi)//2]
 			allcandi=[c for c in allcandi if medean-1000<=c<=medean+1000]
 			if minsupp*1<=len(allcandi)<=minsupp*20:
-				medean=sum(allcandi)/len(allcandi)
+				medean=sum(allcandi)//len(allcandi)
 				stopcandi+=[[medean,len(allcandi)]]
-	print 'clean stop of '+chrom
+	print ('clean stop of '+chrom)
 
 	startc=startcandi;   stopc=stopcandi
 	
@@ -80,7 +80,7 @@ def find_candi_ins_bp(writefilepath,chrom,minsupp):
 	while startc!=[] and stopc!=[]:
 		if abs(startc[0][0]-stopc[0][0])<=200:
 			if startc[0][1]+stopc[0][1]>=2*minsupp:
-				inscandi+=[chrom+'\t'+str((int(startc[0][0])+int(stopc[0][0]))/2)]
+				inscandi+=[chrom+'\t'+str((int(startc[0][0])+int(stopc[0][0]))//2)]
 			startc=startc[1:]
 			stopc=stopc[1:]
 		else:
@@ -92,7 +92,7 @@ def find_candi_ins_bp(writefilepath,chrom,minsupp):
 	for c in inscandi:
 		f.write(c+'\n')
 	f.close()
-	print 'finish '+chrom
+	print ('finish '+chrom)
 
 	return True
 
@@ -131,7 +131,7 @@ def extract_good_reads(writepath,bampath,inscandi):
 def rescue_ins_bam(bampath,chromosomes,writepath,threads,refpath,min_supp,min_size,max_size):
 	
 	#os.system("cat "+writepath+"debreak_ins_workspace/readinfo*chr* > "+writepath+"debreak_ins_workspace/readinfoall")
-	print threads
+	print (threads)
 	debreak_resins=multiprocessing.Pool(threads)
 	for i in range(len(chromosomes)):
 		debreak_resins.apply_async(find_candi_ins_bp,args=(writepath,chromosomes[i],min_supp,))
@@ -185,11 +185,11 @@ def rescue_ins_bam(bampath,chromosomes,writepath,threads,refpath,min_supp,min_si
 	for c in allins:
 		testif=0
 		for d in oldinscalls:
-			if c.split('\t')[0]==d.split('\t')[0] and abs(int(c.split('\t')[1])-int(d.split('\t')[1]))<=500 and 0.7<=float(c.split('\t')[2])/float(d.split('\t')[2])<=1.43:
+			if c.split('\t')[0]==d.split('\t')[0] and abs(int(c.split('\t')[1])-int(d.split('\t')[1]))<=500 and 0.7<=float(c.split('\t')[2])//float(d.split('\t')[2])<=1.43:
 				testif=1; break
 		if testif==0:
 			c=c.split('\t')
-			newins+=[c[0]+'\t'+c[1]+'\t'+c[2]+'\tcontig\t0\t0\trescue_largeins_'+c[4]+'\tInsertion\tPrecise\tGT=./.']
+			newins+=[c[0]+'\t'+c[1]+'\t'+c[2]+'\tcontig\t0\t'+c[6]+'\trescue_largeins_'+c[4]+'\tInsertion\tPrecise\tGT=./.']
 	newins.sort(key=sort_ins)
 	testif=0
 	while testif==0:

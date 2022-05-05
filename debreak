@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/env python3
 
 import debreak_detect
 import debreak_merge_contig as debreak_merge
@@ -42,8 +42,9 @@ parser.add_argument('--tumor',action='store_true',default=False,help='Allow clus
 
 debreak_args=parser.parse_args()
 
+# check required parameters and set optional modules
 if not debreak_args.samlist and not debreak_args.bam:
-	print 'Error:  No input file given!\nFor Debreak usage, use -h or --help'
+	print ('Error:  No input file given!\nFor Debreak usage, use -h or --help')
 	sys.exit(1)
 
 
@@ -63,6 +64,10 @@ if debreak_args.tumor:
 	if debreak_args.min_quality ==None:
 		debreak_args.min_quality=0
 
+logfile=open(writepath+'log.txt','a')
+logfile.write('Start calling SV...\n')
+logfile.close()
+
 record_clip=False
 if debreak_args.rescue_large_ins:
 	if debreak_args.bam:
@@ -70,9 +75,13 @@ if debreak_args.rescue_large_ins:
 			os.system("mkdir "+writepath+'debreak_ins_workspace/')
 			record_clip=True
 		else:
-			print 'No reference provided. Rescue_large_INS module aborted.'
+			logfile=open(writepath+'log.txt','a')
+			logfile.write('Warning: No reference provided. Rescue_large_INS module aborted.\n')
+			logfile.close()
 	else:
-		print 'Rescue_large_INS module requires sorted BAM input. Aborted.'
+		logfile=open(writepath+'log.txt','a')
+		logfile.write('Warning: Rescue_large_INS module requires sorted BAM input. Aborted.\n')
+		logfile.close()
 
 
 vcflist=[]
@@ -98,10 +107,9 @@ if not debreak_args.bam:
 		vcflist+=[samlist[i][:-4]+'.debreak.temp']
 		if not debreak_args.skip_detect:
 			debreak_det.apply_async(debreak_detect.detect_sam,args=(samlist[i],readpath,writepath,chromosomes,debreak_args.min_size,debreak_args.max_size,True,True))
-	print 'Wait for all SAM files done...'
 	debreak_det.close()
 	debreak_det.join()
-	print 'All sam files are processed!'
+
 else:
 	# Detect SVs from sorted bam file
 	readpath=debreak_args.bam
@@ -118,6 +126,10 @@ else:
 	debreak_det.close()
 	debreak_det.join()
 # Merge deletions & insertions from temp files
+
+logfile=open(writepath+'log.txt','a')
+logfile.write('Done detecting raw SV signals.\n')
+logfile.close()
 
 
 rawinscall={}; rawdelcall={};  rawdupcall={};  rawinvcall={};  rawtracall={}
@@ -144,15 +156,14 @@ for filename in vcflist:
 			rawtracall[event_chrom]+=[event.split('\t')[0]+'\t'+event.split('\t')[1]+'\t'+event.split('\t')[2]+'\t'+event.split('\t')[3]+'\t'+event.split('\t')[7]+'\t'+event.split('\t')[5]]
 
 
-
-
 # Estimate Depth of input dataset
 
 
+logfile=open(writepath+'log.txt','a')
 if not debreak_args.min_support:
 	if debreak_args.depth:
 		depth=debreak_args.depth
-		minsupp=round(debreak_args.depth/10.0)+2
+		minsupp=round(debreak_args.depth//10.0)+2
 	else:
 		os.system('cat '+writepath+'map_depth/maplength_* > '+writepath+'map_depth/maplength_allchrom_debreak')
 		allmaplength=open(writepath+'map_depth/maplength_allchrom_debreak','r').read().split('\n')[:-1]
@@ -164,8 +175,8 @@ if not debreak_args.min_support:
 			reflength=sum(pysam.AlignmentFile(samlist[0],'r').lengths)
 		depth=float(allmaplength)/reflength
 		minsupp=round(depth/10.0)+2
-		print "Estimated Sequencing Depth: "+str(depth)
-	print "Suggested min_supp:"+str(minsupp)
+		logfile("Estimated Sequencing Depth: "+str(depth)+'\n')
+	logfile.write("Suggested min_supp:"+str(minsupp)+'\n')
 else:
 	minsupp=debreak_args.min_support
 	if debreak_args.depth:
@@ -180,17 +191,24 @@ else:
 		else:
 			reflength=sum(pysam.AlignmentFile(samlist[0],'r').lengths)
 		depth=float(allmaplength)/reflength
+		logfile("Estimated Sequencing Depth: "+str(depth)+'\n')
+	logfile.write("Using input min_supp:"+str(minsupp)+'\n')
 
 
-print 'Wait for merging all chromosmes...'
 
 if debreak_args.maxcov:
 	highcov=debreak_args.maxcov
+	logfile.write('Using maximal depth:'+str(highcov)+'\n')
 else:
 	highcov=round(depth*2+20)
+	logfile.write('Suggested maximal depth:'+str(highcov)+'\n')
+
+logfile.write('Start clustering raw signals...\n')
+logfile.close()
+
 
 # Merge all SVs
-debreak_meg=multiprocessing.Pool(debreak_args.thread/2)
+debreak_meg=multiprocessing.Pool(debreak_args.thread//2)
 
 for i in range(len(chromosomes)):
 	debreak_meg.apply_async(debreak_merge_cluster.cluster,args=(writepath,rawdelcall[chromosomes[i]],chromosomes[i],chromolength[chromosomes[i]],minsupp,highcov,'del',debreak_args.min_quality,))
@@ -209,30 +227,45 @@ os.system("cat "+writepath+"dup-merged-cluster-* > "+writepath+"duplication-merg
 os.system("cat "+writepath+"inv-merged-cluster-* > "+writepath+"inversion-merged")
 os.system("cat "+writepath+"tra-merged-* > "+writepath+"translocation-merged")
 os.system("rm "+writepath+"*-merged-*")
-print 'All SVs are merged!'
+
+logfile=open(writepath+'log.txt','a')
+logfile.write('Done clustering raw signals.\n')
+logfile.close()
 
 if debreak_args.rescue_dup:
+	logfile=open(writepath+'log.txt','a')
+	logfile.write('Start identifying DUP from INS calls...\n')
+	logfile.close()
 	debreak_resdup_selfalignment.identify_duplication(vcflist,writepath)
-
+	logfile=open(writepath+'log.txt','a')
+	logfile.write('Done DUP rescue.\n')
+	logfile.close()
 
 # POA for all SVs
 if debreak_args.poa:
-	print 'Start POA for all SV candidates...'
+	logfile=open(writepath+'log.txt','a')
+
 	if not debreak_args.ref:
-		print 'Warning:   No reference provided. Abort POA.'
+		logfile.write('Warning: No reference genome provided. Abort breakpoint refinement.\n')
+		logfile.close()
 	else:
+		logfile.write('Start breakpoint refinement for all SV candidates...\n')
+		logfile.close()
 		if debreak_args.bam:
 			debreak_allpoa.poa_bam(debreak_args.bam,writepath,chromosomes,debreak_args.thread,debreak_args.ref,debreak_args.min_size,debreak_args.max_size)
 		else:
 			debreak_allpoa.poa_sam(readpath,samlist,writepath,debreak_args.thread,debreak_args.ref,chromosomes,debreak_args.min_size,debreak_args.max_size)
-
-
-
-
+		logfile=open(writepath+'log.txt','a')
+		logfile.write('Done SV breakpoint refinement.\n')
+		logfile.close()
 
 # Genotyping
 if debreak_args.no_genotype:
 	if debreak_args.bam:
+		logfile=open(writepath+'log.txt','a')
+		logfile.write('Start SV filtering based on depth...\n')
+		logfile.close()
+
 		debreak_gt=multiprocessing.Pool(debreak_args.thread)
 		for i in range(len(chromosomes)):
 			debreak_gt.apply_async(debreak_genotype.genotype_filter_del,args=(debreak_args.bam,writepath+'deletion-merged',chromosomes[i],highcov))
@@ -245,13 +278,19 @@ if debreak_args.no_genotype:
 
 		os.system("cat "+writepath+"*merged-gt* > "+writepath+"debreak-allsv-merged-final")
 		os.system("rm "+writepath+"*merged-gt*")
-		
+		logfile=open(writepath+'log.txt','a')
+		logfile.write('Done SV filtering.\n')
+		logfile.close()
+
 	else:
 		os.system("cat "+writepath+"*merged > "+writepath+"debreak-allsv-merged-final")
 		
 else:
-	print 'Start GenoTyping for all SV candidates...'
+	logfile=open(writepath+'log.txt','a')
+
 	if debreak_args.bam:
+		logfile.write('Start genotyping for all SV candidates...\n')
+		logfile.close()
 		debreak_gt=multiprocessing.Pool(debreak_args.thread)
 		for i in range(len(chromosomes)):
 			debreak_gt.apply_async(debreak_genotype.genotype_ins,args=(debreak_args.bam,writepath+'insertion-merged',chromosomes[i],highcov))
@@ -264,16 +303,31 @@ else:
 
 		os.system("cat "+writepath+"*merged-gt* > "+writepath+"debreak-allsv-merged-final")
 		os.system("rm "+writepath+"*merged-gt*")
-
+		logfile=open(writepath+'log.txt','a')
+		logfile.write('Done genotyping.\n')
+		logfile.close()
 	else:
 		os.system("cat "+writepath+"*merged > "+writepath+"debreak-allsv-merged-final")
-		print 'Warning:  No sorted bam file provided. Abort genotyping.'
+		logfile.write('Warning:  No sorted bam file provided. Abort genotyping.\n')
+		logfile.close()
+
 
 if record_clip:
-	print 'Start Rescue-Lagre-Ins module...'
+	logfile=open(writepath+'log.txt','a')
+	logfile.write('Start Rescue-Lagre-Ins module...\n')
+	logfile.close()
 	debreak_rescuelargeins.rescue_ins_bam(debreak_args.bam,chromosomes,writepath,debreak_args.thread,debreak_args.ref,minsupp,debreak_args.min_size,debreak_args.max_size)
-
+	logfile=open(writepath+'log.txt','a')
+	logfile.write('Done large INS rescue.\n')
+	logfile.close()
 
 # Write into vcf file
-debreak_writevcf.writevcf(readpath,writepath,chromosomes,debreak_args.prefix,debreak_args.poa,not debreak_args.no_genotype)
+logfile=open(writepath+'log.txt','a')
+logfile.write('Start writing VCF file...\n')
+logfile.close()
+
+debreak_writevcf.writevcf_pysam(writepath,readpath)
+logfile=open(writepath+'log.txt','a')
+logfile.write('VCF file written. Bye.\n')
+logfile.close()
 

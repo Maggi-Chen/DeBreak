@@ -88,6 +88,7 @@ def genotype_filter_ins(samfile,readpath,chrom,highcov):
 			return 0
 		filt='-gt-'+chrom
 	f=open(readpath+filt,'w')
+	g=open(readpath+'genotypeinfo','w')
 	for c in alldel:
 		chrom=c.split('\t')[0]
 		start=int(c.split('\t')[1])
@@ -108,6 +109,8 @@ def genotype_filter_ins(samfile,readpath,chrom,highcov):
 		'''
 		if localcov<=highcov:
 			f.write(c+'\tPASS\n')
+		g.write(str(leftcov)+'\t'+str(rightcov)+'\t'+c+'\n')
+	g.close()
 	f.close()
 	return True
 
@@ -278,4 +281,10 @@ def genotype_tra(samfile,readpath,chrom,highcov):
 		
 	return True
 
+
+if __name__ == "__main__":
+	#genotype_filter_del(samfile,readpath,chrom,highcov)genotype_filter_del(samfile,readpath,chrom,highcov)
+	samfile='/data/scratch/maggic/HG002/ccs_minimap2/merged.bam'
+	readpath='/data/scratch/maggic/HG002/debreak_out/ccs/insertion-merged'
+	genotype_filter_ins(samfile,readpath,'all',200)
 

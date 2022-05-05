@@ -192,10 +192,7 @@ def correct_bp(writepath):
 
 
 def sortallsv(a):
-	try:
-		return [int(a.split('\t')[0].split('hr')[1]),int(a.split('\t')[1])]
-	except:
-		return [a.split('\t')[0],int(a.split('\t')[1])]
+	return [a.split('\t')[0],int(a.split('\t')[1])]
 
 
 def poa_bam(bampath,writepath,chromosomes,threads,ref,min_size,max_size):
@@ -209,7 +206,7 @@ def poa_bam(bampath,writepath,chromosomes,threads,ref,min_size,max_size):
 	os.system("ls "+writepath+"debreak_poa_workspace/*_*.readseq.fa > "+writepath+"debreak_poa_workspace/fastalist")
 	
 	fastalist=open(writepath+"debreak_poa_workspace/fastalist",'r').read().split('\n')[:-1]
-	debreak_poa=multiprocessing.Pool(processes=max(1,threads/4),maxtasksperchild=1)
+	debreak_poa=multiprocessing.Pool(processes=max(1,threads//4),maxtasksperchild=1)
 	for svevent in fastalist:
 		debreak_poa.apply_async(abortable_call_wtdbg2,args=(svevent,))
 	debreak_poa.close()
@@ -259,7 +256,7 @@ def poa_sam(readpath,samlist,writepath,threads,ref,chromosomes,min_size,max_size
 	os.system("ls "+writepath+"debreak_poa_workspace/*_*.readseq.fa > "+writepath+"debreak_poa_workspace/fastalist")
 	
 	fastalist=open(writepath+"debreak_poa_workspace/fastalist",'r').read().split('\n')[:-1]
-	debreak_poa=multiprocessing.Pool(threads/4)	
+	debreak_poa=multiprocessing.Pool(threads//4)	
 	for svevent in fastalist:
 		debreak_poa.apply_async(call_wtdbg2,args=(svevent,))
 	debreak_poa.close()

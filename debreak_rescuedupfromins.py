@@ -32,7 +32,7 @@ def identify_duplication(vcflist,writepath,min_support,refpath):
 			if readname in insread :
 				insinfo=insread[readname]
 				try:
-					if a.split('\t')[0]==insinfo.split('_')[0] and abs(int(a.split('\t')[1])-int(insinfo.split('_')[1]))<=500 and 0.7<=int(a.split('\t')[2])/int(insinfo.split('_')[2])<=1.43:
+					if a.split('\t')[0]==insinfo.split('_')[0] and abs(int(a.split('\t')[1])-int(insinfo.split('_')[1]))<=500 and 0.7<=int(a.split('\t')[2])//int(insinfo.split('_')[2])<=1.43:
 						g=open(writepath+'debreak_resdup_insertseq/'+insinfo+'.fa','a')
 						insseq=a.split('\t')[7]
 						g.write('>'+insinfo+'_'+readname+'\n'+insseq+'\n')
@@ -44,7 +44,7 @@ def identify_duplication(vcflist,writepath,min_support,refpath):
 	#extra ref sequence
 	allins=[]
 	for c in ins:
-	        insinfo=[c.split('\t')[0],int(c.split('\t')[1]),int(c.split('\t')[2])]
+		insinfo=[c.split('\t')[0],int(c.split('\t')[1]),int(c.split('\t')[2])]
 		allins+=[insinfo]
 
 	f=open(refpath,'r')
@@ -56,7 +56,7 @@ def identify_duplication(vcflist,writepath,min_support,refpath):
 			chrom='chrX'
 		ref=allref[i].split('\n')
 		if ref[0].split(' ')[0]!=chrom:
-			print 'chrom not correct '+chrom+'\t'+ref[0]
+			print ('chrom not correct '+chrom+'\t'+ref[0])
 			return 0
 		seq=''
 		for c in ref[1:]:
@@ -74,7 +74,7 @@ def identify_duplication(vcflist,writepath,min_support,refpath):
 	
 	f=open(writepath+'debreak_mapdup.sh','w')
 	for c in ins:
-        	insinfo=c.split('\t')[0]+'_'+c.split('\t')[1]+'_'+c.split('\t')[2]
+		insinfo=c.split('\t')[0]+'_'+c.split('\t')[1]+'_'+c.split('\t')[2]
 		f.write('minimap2 -a -k 9  '+writepath+'debreak_resdup_refseq/'+insinfo+'.ref.fa  '+writepath+'debreak_resdup_insertseq/'+insinfo+'.fa  > '+writepath+'debreak_resdup_map_space/'+insinfo+'.sam\n')
 	f.close()
 
@@ -95,10 +95,10 @@ def identify_duplication(vcflist,writepath,min_support,refpath):
 		if len(allf)==0:
 			continue
 		dup=len([m for m in allf if m.split('\t')[1]!='4'])
-		if dup>=min_support/2 and float(dup)/len(allf) >0.5:
+		if dup>=min_support//2 and float(dup)//len(allf) >0.5:
 			insinfo=c.split('_')
-			rescueddup+=[insinfo[0]+'\t'+insinfo[1]+'\t'+insinfo[2].split('.')[0]+'\t'+str(dup)+'\t'+str(float(dup)/len(allf))]
-			h.write(insinfo[0]+'\t'+insinfo[1]+'\t'+insinfo[2].split('.')[0]+'\t'+str(dup)+'\t'+str(float(dup)/len(allf))+'\n')
+			rescueddup+=[insinfo[0]+'\t'+insinfo[1]+'\t'+insinfo[2].split('.')[0]+'\t'+str(dup)+'\t'+str(float(dup)//len(allf))]
+			h.write(insinfo[0]+'\t'+insinfo[1]+'\t'+insinfo[2].split('.')[0]+'\t'+str(dup)+'\t'+str(float(dup)//len(allf))+'\n')
 	h.close()
 	
 
@@ -114,7 +114,7 @@ def identify_duplication(vcflist,writepath,min_support,refpath):
 		num=int(c.split('\t')[3])
 		testif=0
 		for d in debreakdup:
-			if d.split('\t')[0]==chr1 and abs(int(d.split('\t')[1])-pos1)<=500 and 0.7<=len1/float(d.split('\t')[2]) <=1.43:
+			if d.split('\t')[0]==chr1 and abs(int(d.split('\t')[1])-pos1)<=500 and 0.7<=len1//float(d.split('\t')[2]) <=1.43:
 				testif=1; break
 		if testif==0:
 			alldup+=[c+'\t.\t.\tDuplication']
@@ -135,7 +135,7 @@ def identify_duplication(vcflist,writepath,min_support,refpath):
 		len1=int(c.split('\t')[2])
 		testif=0
 		for d in rescueddup:
-			if d.split('\t')[0]==chr1 and abs(int(d.split('\t')[1])-pos1)<=500 and 0.7<=len1/float(d.split('\t')[2]) <=1.43:
+			if d.split('\t')[0]==chr1 and abs(int(d.split('\t')[1])-pos1)<=500 and 0.7<=len1//float(d.split('\t')[2]) <=1.43:
 				testif=1;  break
 		if testif==0:	
 			allins+=[c]

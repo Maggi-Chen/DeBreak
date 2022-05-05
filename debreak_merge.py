@@ -29,10 +29,10 @@ def m_samechr_insertion(samechrom):
 			for can in candi:
 				if int(can.split('\t')[2])>=0.5*length:
 					can_count=int(can.split('\t')[3])
-					position=int((position*count+int(can.split('\t')[1])*can_count)/(count+can_count))
-					length=int((length*count+int(can.split('\t')[2])*can_count)/(count+can_count))
-					quality=(quality*count+float(can.split('\t')[4])*can_count)/(count+can_count)
-					sd=(sd*count+float(can.split('\t')[5])*can_count)/(count+can_count)
+					position=int((position*count+int(can.split('\t')[1])*can_count)//(count+can_count))
+					length=int((length*count+int(can.split('\t')[2])*can_count)//(count+can_count))
+					quality=(quality*count+float(can.split('\t')[4])*can_count)//(count+can_count)
+					sd=(sd*count+float(can.split('\t')[5])*can_count)//(count+can_count)
 					readnames+=can.split('\t')[6]+';'
 					count+=can_count
 			readnames=readnames[:-1]
@@ -66,10 +66,10 @@ def m_samechr_deletion(samechrom):
 			for can in candi:
 				if int(can.split('\t')[2])>=0.5*length:
 					can_count=int(can.split('\t')[3])
-					position=int((position*count+int(can.split('\t')[1])*can_count)/(count+can_count))
-					length=int((length*count+int(can.split('\t')[2])*can_count)/(count+can_count))
-					quality=(quality*count+float(can.split('\t')[4])*can_count)/(count+can_count)
-					sd=(sd*count+float(can.split('\t')[5])*can_count)/(count+can_count)
+					position=int((position*count+int(can.split('\t')[1])*can_count)//(count+can_count))
+					length=int((length*count+int(can.split('\t')[2])*can_count)//(count+can_count))
+					quality=(quality*count+float(can.split('\t')[4])*can_count)//(count+can_count)
+					sd=(sd*count+float(can.split('\t')[5])*can_count)//(count+can_count)
 					readnames+=can.split('\t')[6]+';'
 					count+=can_count
 			readnames=readnames[:-1]
@@ -91,11 +91,11 @@ def m_samechr_translocation(samechrom):
 				iftrue=0
 				if samechrom[i].split('\t')[0]==samechrom[i+1].split('\t')[0] and abs(int(samechrom[i].split('\t')[1])-int(samechrom[i+1].split('\t')[1]))<=1000:
 					count1=int(samechrom[i].split('\t')[4]); count2=int(samechrom[i+1].split('\t')[4])
-					pos1=(int(samechrom[i].split('\t')[1])*count1+int(samechrom[i+1].split('\t')[1])*count2)/(count1+count2)
-					pos2=(int(samechrom[i].split('\t')[3])*count1+int(samechrom[i+1].split('\t')[3])*count2)/(count1+count2)
-					quality=(float(samechrom[i].split('\t')[5])*count1+float(samechrom[i+1].split('\t')[5])*count2)/(count1+count2)
-					sd1=(float(samechrom[i].split('\t')[6])*count1+float(samechrom[i+1].split('\t')[6])*count2)/(count1+count2)
-					sd2=(float(samechrom[i].split('\t')[7])*count1+float(samechrom[i+1].split('\t')[7])*count2)/(count1+count2)
+					pos1=(int(samechrom[i].split('\t')[1])*count1+int(samechrom[i+1].split('\t')[1])*count2)//(count1+count2)
+					pos2=(int(samechrom[i].split('\t')[3])*count1+int(samechrom[i+1].split('\t')[3])*count2)//(count1+count2)
+					quality=(float(samechrom[i].split('\t')[5])*count1+float(samechrom[i+1].split('\t')[5])*count2)//(count1+count2)
+					sd1=(float(samechrom[i].split('\t')[6])*count1+float(samechrom[i+1].split('\t')[6])*count2)//(count1+count2)
+					sd2=(float(samechrom[i].split('\t')[7])*count1+float(samechrom[i+1].split('\t')[7])*count2)//(count1+count2)
 					readname=samechrom[i].split('\t')[8]+';'+samechrom[i+1].split('\t')[8]
 					mergedtra=samechrom[i].split('\t')[0]+'\t'+str(pos1)+'\t'+samechrom[i].split('\t')[2]+'\t'+str(pos2)+'\t'+str(count1+count2)+'\t'+str(quality)+'\t'+str(sd1)+'\t'+str(sd2)+'\t'+readname+'\tTranslocation'
 					samechrom=samechrom[:i]+[mergedtra]+samechrom[i+2:]
@@ -128,9 +128,9 @@ def mergeinfo_translocation(candi,min_support):
 
 	candi.sort(key=mergeinfosecpos)
 	if len(candi)%2==0:
-		median=(int(candi[len(candi)/2-1].split('\t')[3])+int(candi[len(candi)/2].split('\t')[3]))/2
+		median=(int(candi[len(candi)//2-1].split('\t')[3])+int(candi[len(candi)//2].split('\t')[3]))//2
 	else:
-		median=int(candi[len(candi)/2].split('\t')[3])
+		median=int(candi[len(candi)//2].split('\t')[3])
 	candi=[ c for c in candi if abs(int(c.split('\t')[3])-median)<=800]
 	
 	if len(candi)>=min_support:
@@ -143,7 +143,7 @@ def mergeinfo_translocation(candi,min_support):
 		for c in candi:
 			readnames+=c.split('\t')[5]+';'
 		readnames=readnames[:-1]
-		return [chrom+'\t'+str(sum(pos1)/len(pos1))+'\t'+secchr+'\t'+str(sum(pos2)/len(pos2))+'\t'+str(len(candi))+'\t'+str(sum(qual)/len(qual))+'\t'+str(sd1)+'\t'+str(sd2)+'\t'+readnames+'\tTranslocation']
+		return [chrom+'\t'+str(sum(pos1)//len(pos1))+'\t'+secchr+'\t'+str(sum(pos2)//len(pos2))+'\t'+str(len(candi))+'\t'+str(sum(qual)//len(qual))+'\t'+str(sd1)+'\t'+str(sd2)+'\t'+readnames+'\tTranslocation']
 	else:
 		return []
 
@@ -156,10 +156,10 @@ def mergeinfo_insertion(candi):
 	ins=[]
 	candi.sort(key=mergeinfolengthsort)
 	while len(candi)>2:
-		if int(candi[-1].split('\t')[2]) > 1.5* int(candi[len(candi)/2].split('\t')[2]):
+		if int(candi[-1].split('\t')[2]) > 1.5* int(candi[len(candi)//2].split('\t')[2]):
 			candi.remove(candi[-1])
 			continue
-		if int(candi[len(candi)/2].split('\t')[2]) >  1.5*int(candi[0].split('\t')[2]):
+		if int(candi[len(candi)//2].split('\t')[2]) >  1.5*int(candi[0].split('\t')[2]):
 			candi.remove(candi[0])
 			continue
 		break
@@ -168,10 +168,10 @@ def mergeinfo_insertion(candi):
 		position=[int(c.split('\t')[1]) for c in candi]
 		length=[int(c.split('\t')[2]) for c in candi]
 		quality=[float(c.split('\t')[3]) for c in candi]
-		position=sum(position)/len(position)
-		quality=sum(quality)/float(len(quality))
+		position=sum(position)//len(position)
+		quality=sum(quality)//float(len(quality))
 		stand=standerd_varition(length)
-		length=sum(length)/len(length)
+		length=sum(length)//len(length)
 		readnames=''
 		for c in candi:
 			readnames+=c.split('\t')[4]+';'
@@ -184,10 +184,10 @@ def mergeinfo_deletion(candi):
 	dels=[]
 	candi.sort(key=mergeinfolengthsort)
 	while len(candi)>2:
-		if int(candi[-1].split('\t')[2]) > 1.5* int(candi[len(candi)/2].split('\t')[2]):
+		if int(candi[-1].split('\t')[2]) > 1.5* int(candi[len(candi)//2].split('\t')[2]):
 			candi.remove(candi[-1])
 			continue
-		if int(candi[len(candi)/2].split('\t')[2]) >  1.5*int(candi[0].split('\t')[2]):
+		if int(candi[len(candi)//2].split('\t')[2]) >  1.5*int(candi[0].split('\t')[2]):
 			candi.remove(candi[0])
 			continue
 		break
@@ -196,10 +196,10 @@ def mergeinfo_deletion(candi):
 		position=[int(c.split('\t')[1]) for c in candi]
 		length=[int(c.split('\t')[2]) for c in candi]
 		quality=[float(c.split('\t')[3]) for c in candi]
-		position=sum(position)/len(position)
-		quality=sum(quality)/float(len(quality))
+		position=sum(position)//len(position)
+		quality=sum(quality)//float(len(quality))
 		stand=standerd_varition(length)
-		length=sum(length)/len(length)
+		length=sum(length)//len(length)
 		return[chrom+'\t'+str(position)+'\t'+str(length)+'\t'+str(len(candi))+'\t'+str(quality)+'\t'+str(stand)]
 	else:
 		return []
@@ -246,7 +246,7 @@ def counttime_insertion(samechrom,min_support):
 			inslength+=[int(event.split('\t')[2])]
 			continue
 		if window==100:
-			length=sum(inslength)/len(inslength)
+			length=sum(inslength)//len(inslength)
 			if length<=100:
 				window=200
 			if 100<length<=500:
@@ -285,7 +285,7 @@ def counttime_deletion(samechrom,min_support):
 			dellength+=[int(event.split('\t')[2])]
 			continue
 		if window==100:
-			length=sum(dellength)/len(dellength)
+			length=sum(dellength)//len(dellength)
 			if length<=100:
 				window=200
 			if 100<length<=500:
@@ -386,7 +386,7 @@ def finalsorttra(a):
 	return [a.split('\t')[0],int(a.split('\t')[1])]
 
 def merge_translocation(min_support,readpath,samechrom_translocation,chrom,upper_bound,minmapq):
-	print 'start ',chrom,len(samechrom_translocation)
+	print ( 'start ',chrom,len(samechrom_translocation))
 	if samechrom_translocation==[]:
 		return True
 	trat1=time.time()

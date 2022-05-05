@@ -4,12 +4,12 @@ import time
 def check_dup(insinfo,writepath):
 	allinfo=open(writepath+'debreak_resdup_map_space/'+insinfo+'.paf','r').read().split('\n')[:-1]
 	numsupp=0.0
- 	suppread=[]
+	suppread=[]
 	window=300
- 	for align in allinfo:
- 		readname=align.split('\t')[0]
- 		if readname in suppread or int(align.split('\t')[10])<0.5*int(align.split('\t')[1])  or align.split('\t')[4]!='+':
- 			continue
+	for align in allinfo:
+		readname=align.split('\t')[0]
+		if readname in suppread or int(align.split('\t')[10])<0.5*int(align.split('\t')[1])  or align.split('\t')[4]!='+':
+			continue
 		pos=int(align.split('\t')[5].split('DeBreak')[-1])
 		start=int(align.split('\t')[7])
 		end=int(align.split('\t')[8])
@@ -17,7 +17,7 @@ def check_dup(insinfo,writepath):
 			numsupp+=1
 			suppread+=[readname]
 
-	return numsupp/int(insinfo.split('__')[3])
+	return numsupp//int(insinfo.split('__')[3])
 
 
 def sortdup(a):
@@ -36,7 +36,7 @@ def identify_duplication(vcflist,writepath):
 	os.system("mkdir "+writepath+"debreak_resdup_refseq/")
 	os.system("mkdir "+writepath+"debreak_resdup_map_space/")
 	
- 	for vcffile in vcflist:
+	for vcffile in vcflist:
 		f=open(writepath+'sv_raw_calls/'+vcffile,'r')
 		a=f.readline()
 		while a!='':
@@ -86,6 +86,4 @@ def identify_duplication(vcflist,writepath):
 	f.close()
 
 	return 0
-	
-
 

@@ -105,127 +105,127 @@ def simplifycigar(cigar):
 
 
 def segmentdeletion(segments,min_size,max_size):  #input a list of segments,return list of deletions
-        if len([c for c in segments if int(c[1])<=16])==0:
-                return []
-        if len(segments)<=1:
-                return []
-        svcallset=[]
-        primary=[c for c in segments if int(c[1])<=16][0]
-        segments=[c for c in segments if c != primary]
-        chrom=primary[2]
-        priflag=(int(primary[1])%32)>15
-        samedirchr=[]
-        samechr=[]
-        diffchr=[]
-        rawsegsvid=1
-        for c in segments:
-                ch=c[2]
-                f=int(c[1])%32>15
-                if c[5][1]<300:
-                        continue
-                if ch!=chrom:
-                        diffchr+=[c]
-                elif f!=priflag:
-                        samechr+=[c]
-                else:
-                        samedirchr+=[c]
-        for c in samedirchr:
-                if c[3]>primary[3] :
-                        leftread=primary
-                        rightread=c
-                elif c[3]<primary[3]:
-                        leftread=c
-                        rightread=primary
-                else:
-                        continue
-                leftinfo=leftread[5]
-                rightinfo=rightread[5]
-                #insertion:
-                if abs(rightread[3]-leftread[4])<=300:
-                        overlap=rightread[3]-leftread[4]
-                        ins_size=rightinfo[0]-leftinfo[1]-leftinfo[0]-overlap
-                        if min_size<=ins_size<=max_size:
-                                svcallset+=[chrom+'\t'+str(min(rightread[3],leftread[4]))+'\t'+str(ins_size)+'\t'+'I-segment'+'\t'+primary[0]+'_seg'+str(rawsegsvid)+'\t'+str(int(c[1])+int(primary[1]))+'\t'+str((int(c[6])+int(primary[6]))/2)]
-                                rawsegsvid+=1
+	if len([c for c in segments if int(c[1])<=16])==0:
+		return []
+	if len(segments)<=1:
+		return []
+	svcallset=[]
+	primary=[c for c in segments if int(c[1])<=16][0]
+	segments=[c for c in segments if c != primary]
+	chrom=primary[2]
+	priflag=(int(primary[1])%32)>15
+	samedirchr=[]
+	samechr=[]
+	diffchr=[]
+	rawsegsvid=1
+	for c in segments:
+		ch=c[2]
+		f=int(c[1])%32>15
+		if c[5][1]<300:
+			continue
+		if ch!=chrom:
+			diffchr+=[c]
+		elif f!=priflag:
+			samechr+=[c]
+		else:
+			samedirchr+=[c]
+	for c in samedirchr:
+		if c[3]>primary[3] :
+			leftread=primary
+			rightread=c
+		elif c[3]<primary[3]:
+			leftread=c
+			rightread=primary
+		else:
+			continue
+		leftinfo=leftread[5]
+		rightinfo=rightread[5]
+		#insertion:
+		if abs(rightread[3]-leftread[4])<=300:
+			overlap=rightread[3]-leftread[4]
+			ins_size=rightinfo[0]-leftinfo[1]-leftinfo[0]-overlap
+			if min_size<=ins_size<=max_size:
+				svcallset+=[chrom+'\t'+str(min(rightread[3],leftread[4]))+'\t'+str(ins_size)+'\t'+'I-segment'+'\t'+primary[0]+'_seg'+str(rawsegsvid)+'\t'+str(int(c[1])+int(primary[1]))+'\t'+str((int(c[6])+int(primary[6]))//2)]
+				rawsegsvid+=1
 
-                #deletion:
-                overlapmap=leftinfo[0]+leftinfo[1]-rightinfo[0]
-                window_max=1500
-                if -200<overlapmap<window_max:
-                        del_size=rightread[3]-leftread[4]+overlapmap
-                        if min_size<=del_size<=max_size:
-                                svcallset+=[chrom+'\t'+str(leftread[4]-max(0,overlapmap))+'\t'+str(del_size)+'\t'+'D-segment'+'\t'+primary[0]+'_seg'+str(rawsegsvid)+'\t'+str(c[1])+'\t'+str((int(c[6])+int(primary[6]))/2)]
-                                rawsegsvid+=1
+		#deletion:
+		overlapmap=leftinfo[0]+leftinfo[1]-rightinfo[0]
+		window_max=1500
+		if -200<overlapmap<window_max:
+			del_size=rightread[3]-leftread[4]+overlapmap
+			if min_size<=del_size<=max_size:
+				svcallset+=[chrom+'\t'+str(leftread[4]-max(0,overlapmap))+'\t'+str(del_size)+'\t'+'D-segment'+'\t'+primary[0]+'_seg'+str(rawsegsvid)+'\t'+str(c[1])+'\t'+str((int(c[6])+int(primary[6]))//2)]
+				rawsegsvid+=1
 
-                #duplication:
-                overlapmap=leftinfo[0]+leftinfo[1]-rightinfo[0]
-                window_max=500
-                if -200<overlapmap<window_max and leftread[4]-rightread[3]>=max(50,overlapmap):
-                        dup_size=leftread[4]-rightread[3]-max(overlapmap,0)
-                        if min_size<=dup_size<=max_size:
-                                svcallset+=[chrom+'\t'+str(rightread[3])+'\t'+str(dup_size)+'\t'+'DUP-segment'+'\t'+primary[0]+'_seg'+str(rawsegsvid)+'\t'+str(c[1])+'\t'+str((int(c[6])+int(primary[6]))/2)]
-                                rawsegsvid+=1
-                overlapmap=rightinfo[0]+rightinfo[1]-leftinfo[0]
-                if -200<overlapmap<window_max and (rightread[4]-leftread[3])>=max(1000,overlapmap):
-                        dup_size=rightread[4]-leftread[3]-overlapmap
-                        if min_size<=dup_size<=max_size:
-                                svcallset+=[chrom+'\t'+str(leftread[3])+'\t'+str(dup_size)+'\t'+'DUP-segment'+'\t'+primary[0]+'_seg'+str(rawsegsvid)+'\t'+str(c[1])+'\t'+str((int(c[6])+int(primary[6]))/2)]
-                                rawsegsvid+=1
-        #inversion:
-        for c in samechr:
-                if c[3]>primary[3] and c[4]-primary[4]>-200:
-                        leftread=primary
-                        rightread=c
-                elif c[3]<primary[3] and primary[4]-c[4]>-200:
-                        leftread=c
-                        rightread=primary
-                else:
-                        continue
-                leftinfo=leftread[5]
-                rightinfo=rightread[5]
-                window_max=500
-                overlapmap=rightinfo[0]+rightinfo[1]-leftinfo[2]
-                if -200<overlapmap<window_max and (rightread[4]-leftread[4])>=max(100,overlapmap):
-                        inv_size=rightread[4]-leftread[4]-overlapmap
-                        if min_size<=inv_size<=max_size:
-                                svcallset+=[chrom+'\t'+str(leftread[4])+'\t'+str(inv_size)+'\t'+'INV-segment'+'\t'+primary[0]+'_seg'+str(rawsegsvid)+'\t'+str(c[1])+'\t'+str((int(c[6])+int(primary[6]))/2)]
-                                rawsegsvid+=1
-                                continue
-                overlapmap=rightinfo[1]+rightinfo[2]-leftinfo[0]
-                if -200<overlapmap<window_max and (rightread[3]-leftread[3])>=max(100,overlapmap):
-                        inv_size=rightread[3]-leftread[3]-overlapmap
-                        if min_size<=inv_size<=max_size:
-                                svcallset+=[chrom+'\t'+str(leftread[3])+'\t'+str(inv_size)+'\t'+'INV-segment'+'\t'+primary[0]+'_seg'+str(rawsegsvid)+'\t'+str(c[1])+'\t'+str((int(c[6])+int(primary[6]))/2)]
-                                rawsegsvid+=1
-                                continue
-        #translocation:
-        for c in diffchr:
-                pinfo=primary[5]
-                cinfo=c[5]
-                window_max=200
-                bp1=''
-                bp2=''
-                if abs(pinfo[0]-cinfo[0]-cinfo[1])<=window_max or abs(pinfo[0]-cinfo[1]-cinfo[2])<=window_max:
-                        chrom1=primary[2]
-                        bp1=primary[3]
-                elif abs(pinfo[2]-cinfo[0]-cinfo[1])<=window_max or abs(pinfo[2]-cinfo[1]-cinfo[2])<=window_max:
-                        chrom1=primary[2]
-                        bp1=primary[4]
-                if abs(cinfo[0]-pinfo[0]-pinfo[1])<=window_max or abs(cinfo[0]-pinfo[1]-pinfo[2])<=window_max:
-                        chrom2=c[2]
-                        bp2=c[3]
-                elif abs(cinfo[2]-pinfo[0]-pinfo[1])<=window_max or abs(cinfo[2]-pinfo[1]-pinfo[2])<=window_max:
-                        chrom2=c[2]
-                        bp2=c[4]
-                if bp1!='' and bp2!='':
-                        if chrom1 > chrom2:
-                                svcallset+=[chrom2+'\t'+str(bp2)+'\t'+chrom1+'\t'+str(bp1)+'\tTRA-segment\t'+primary[0]+'_seg'+str(rawsegsvid)+'\t'+str(c[1])+'\t'+str((int(c[6])+int(primary[6]))/2)]
-                                rawsegsvid+=1
-                        if chrom1 < chrom2:
-                                svcallset+=[chrom1+'\t'+str(bp1)+'\t'+chrom2+'\t'+str(bp2)+'\tTRA-segment\t'+primary[0]+'_seg'+str(rawsegsvid)+'\t'+str(c[1])+'\t'+str((int(c[6])+int(primary[6]))/2)]
-                                rawsegsvid+=1
+		#duplication:
+		overlapmap=leftinfo[0]+leftinfo[1]-rightinfo[0]
+		window_max=500
+		if -200<overlapmap<window_max and leftread[4]-rightread[3]>=max(50,overlapmap):
+			dup_size=leftread[4]-rightread[3]-max(overlapmap,0)
+			if min_size<=dup_size<=max_size:
+				svcallset+=[chrom+'\t'+str(rightread[3])+'\t'+str(dup_size)+'\t'+'DUP-segment'+'\t'+primary[0]+'_seg'+str(rawsegsvid)+'\t'+str(c[1])+'\t'+str((int(c[6])+int(primary[6]))//2)]
+				rawsegsvid+=1
+		overlapmap=rightinfo[0]+rightinfo[1]-leftinfo[0]
+		if -200<overlapmap<window_max and (rightread[4]-leftread[3])>=max(1000,overlapmap):
+			dup_size=rightread[4]-leftread[3]-overlapmap
+			if min_size<=dup_size<=max_size:
+				svcallset+=[chrom+'\t'+str(leftread[3])+'\t'+str(dup_size)+'\t'+'DUP-segment'+'\t'+primary[0]+'_seg'+str(rawsegsvid)+'\t'+str(c[1])+'\t'+str((int(c[6])+int(primary[6]))//2)]
+				rawsegsvid+=1
+	#inversion:
+	for c in samechr:
+		if c[3]>primary[3] and c[4]-primary[4]>-200:
+			leftread=primary
+			rightread=c
+		elif c[3]<primary[3] and primary[4]-c[4]>-200:
+			leftread=c
+			rightread=primary
+		else:
+			continue
+		leftinfo=leftread[5]
+		rightinfo=rightread[5]
+		window_max=500
+		overlapmap=rightinfo[0]+rightinfo[1]-leftinfo[2]
+		if -200<overlapmap<window_max and (rightread[4]-leftread[4])>=max(100,overlapmap):
+			inv_size=rightread[4]-leftread[4]-overlapmap
+			if min_size<=inv_size<=max_size:
+				svcallset+=[chrom+'\t'+str(leftread[4])+'\t'+str(inv_size)+'\t'+'INV-segment'+'\t'+primary[0]+'_seg'+str(rawsegsvid)+'\t'+str(c[1])+'\t'+str((int(c[6])+int(primary[6]))//2)]
+				rawsegsvid+=1
+				continue
+		overlapmap=rightinfo[1]+rightinfo[2]-leftinfo[0]
+		if -200<overlapmap<window_max and (rightread[3]-leftread[3])>=max(100,overlapmap):
+			inv_size=rightread[3]-leftread[3]-overlapmap
+			if min_size<=inv_size<=max_size:
+				svcallset+=[chrom+'\t'+str(leftread[3])+'\t'+str(inv_size)+'\t'+'INV-segment'+'\t'+primary[0]+'_seg'+str(rawsegsvid)+'\t'+str(c[1])+'\t'+str((int(c[6])+int(primary[6]))//2)]
+				rawsegsvid+=1
+				continue
+	#translocation:
+	for c in diffchr:
+		pinfo=primary[5]
+		cinfo=c[5]
+		window_max=200
+		bp1=''
+		bp2=''
+		if abs(pinfo[0]-cinfo[0]-cinfo[1])<=window_max or abs(pinfo[0]-cinfo[1]-cinfo[2])<=window_max:
+			chrom1=primary[2]
+			bp1=primary[3]
+		elif abs(pinfo[2]-cinfo[0]-cinfo[1])<=window_max or abs(pinfo[2]-cinfo[1]-cinfo[2])<=window_max:
+			chrom1=primary[2]
+			bp1=primary[4]
+		if abs(cinfo[0]-pinfo[0]-pinfo[1])<=window_max or abs(cinfo[0]-pinfo[1]-pinfo[2])<=window_max:
+			chrom2=c[2]
+			bp2=c[3]
+		elif abs(cinfo[2]-pinfo[0]-pinfo[1])<=window_max or abs(cinfo[2]-pinfo[1]-pinfo[2])<=window_max:
+			chrom2=c[2]
+			bp2=c[4]
+		if bp1!='' and bp2!='':
+			if chrom1 > chrom2:
+				svcallset+=[chrom2+'\t'+str(bp2)+'\t'+chrom1+'\t'+str(bp1)+'\tTRA-segment\t'+primary[0]+'_seg'+str(rawsegsvid)+'\t'+str(c[1])+'\t'+str((int(c[6])+int(primary[6]))//2)]
+				rawsegsvid+=1
+			if chrom1 < chrom2:
+				svcallset+=[chrom1+'\t'+str(bp1)+'\t'+chrom2+'\t'+str(bp2)+'\tTRA-segment\t'+primary[0]+'_seg'+str(rawsegsvid)+'\t'+str(c[1])+'\t'+str((int(c[6])+int(primary[6]))//2)]
+				rawsegsvid+=1
 
-        return svcallset
+	return svcallset
 
 
 
@@ -270,7 +270,7 @@ def segmentdeletion_tumor(segments,min_size,max_size):  #input a list of segment
 				overlap=rightread[3]-leftread[4]
 				ins_size=rightinfo[0]-leftinfo[1]-leftinfo[0]-overlap
 				if min_size<=ins_size<=max_size:
-					svcallset+=[chrom+'\t'+str(min(rightread[3],leftread[4]))+'\t'+str(ins_size)+'\t'+'I-segment'+'\t'+primary[0]+'_seg'+str(rawsegsvid)+'\t'+str(int(c[1])+int(primary[1]))+'\t'+str((int(c[6])+int(primary[6]))/2)]
+					svcallset+=[chrom+'\t'+str(min(rightread[3],leftread[4]))+'\t'+str(ins_size)+'\t'+'I-segment'+'\t'+primary[0]+'_seg'+str(rawsegsvid)+'\t'+str(int(c[1])+int(primary[1]))+'\t'+str((int(c[6])+int(primary[6]))//2)]
 					rawsegsvid+=1
 
 		#deletion:
@@ -279,7 +279,7 @@ def segmentdeletion_tumor(segments,min_size,max_size):  #input a list of segment
 			if -200<overlapmap<window_max:
 				del_size=rightread[3]-leftread[4]+overlapmap
 				if min_size<=del_size<=max_size:
-					svcallset+=[chrom+'\t'+str(leftread[4]-max(0,overlapmap))+'\t'+str(del_size)+'\t'+'D-segment'+'\t'+primary[0]+'_seg'+str(rawsegsvid)+'\t'+str(c[1])+'\t'+str((int(c[6])+int(primary[6]))/2)]
+					svcallset+=[chrom+'\t'+str(leftread[4]-max(0,overlapmap))+'\t'+str(del_size)+'\t'+'D-segment'+'\t'+primary[0]+'_seg'+str(rawsegsvid)+'\t'+str(c[1])+'\t'+str((int(c[6])+int(primary[6]))//2)]
 					rawsegsvid+=1
 		
 		#duplication:
@@ -288,13 +288,13 @@ def segmentdeletion_tumor(segments,min_size,max_size):  #input a list of segment
 			if -200<overlapmap<window_max and leftread[4]-rightread[3]>=max(50,overlapmap):
 				dup_size=leftread[4]-rightread[3]-max(overlapmap,0)
 				if min_size<=dup_size<=max_size:
-					svcallset+=[chrom+'\t'+str(rightread[3])+'\t'+str(dup_size)+'\t'+'DUP-segment'+'\t'+primary[0]+'_seg'+str(rawsegsvid)+'\t'+str(c[1])+'\t'+str((int(c[6])+int(primary[6]))/2)]
+					svcallset+=[chrom+'\t'+str(rightread[3])+'\t'+str(dup_size)+'\t'+'DUP-segment'+'\t'+primary[0]+'_seg'+str(rawsegsvid)+'\t'+str(c[1])+'\t'+str((int(c[6])+int(primary[6]))//2)]
 					rawsegsvid+=1
 			overlapmap=rightinfo[0]+rightinfo[1]-leftinfo[0]
 			if -200<overlapmap<window_max and (rightread[4]-leftread[3])>=max(1000,overlapmap):
 				dup_size=rightread[4]-leftread[3]-overlapmap
 				if min_size<=dup_size<=max_size:
-					svcallset+=[chrom+'\t'+str(leftread[3])+'\t'+str(dup_size)+'\t'+'DUP-segment'+'\t'+primary[0]+'_seg'+str(rawsegsvid)+'\t'+str(c[1])+'\t'+str((int(c[6])+int(primary[6]))/2)]
+					svcallset+=[chrom+'\t'+str(leftread[3])+'\t'+str(dup_size)+'\t'+'DUP-segment'+'\t'+primary[0]+'_seg'+str(rawsegsvid)+'\t'+str(c[1])+'\t'+str((int(c[6])+int(primary[6]))//2)]
 					rawsegsvid+=1
 	#inversion:
 		for c in samechr:
@@ -313,14 +313,14 @@ def segmentdeletion_tumor(segments,min_size,max_size):  #input a list of segment
 			if -200<overlapmap<window_max and (rightread[4]-leftread[4])>=max(100,overlapmap):
 				inv_size=rightread[4]-leftread[4]-overlapmap
 				if min_size<=inv_size<=max_size:
-					svcallset+=[chrom+'\t'+str(leftread[4])+'\t'+str(inv_size)+'\t'+'INV-segment'+'\t'+primary[0]+'_seg'+str(rawsegsvid)+'\t'+str(c[1])+'\t'+str((int(c[6])+int(primary[6]))/2)]
+					svcallset+=[chrom+'\t'+str(leftread[4])+'\t'+str(inv_size)+'\t'+'INV-segment'+'\t'+primary[0]+'_seg'+str(rawsegsvid)+'\t'+str(c[1])+'\t'+str((int(c[6])+int(primary[6]))//2)]
 					rawsegsvid+=1
 					continue
 			overlapmap=rightinfo[1]+rightinfo[2]-leftinfo[0]
 			if -200<overlapmap<window_max and (rightread[3]-leftread[3])>=max(100,overlapmap):
 				inv_size=rightread[3]-leftread[3]-overlapmap
 				if min_size<=inv_size<=max_size:
-					svcallset+=[chrom+'\t'+str(leftread[3])+'\t'+str(inv_size)+'\t'+'INV-segment'+'\t'+primary[0]+'_seg'+str(rawsegsvid)+'\t'+str(c[1])+'\t'+str((int(c[6])+int(primary[6]))/2)]
+					svcallset+=[chrom+'\t'+str(leftread[3])+'\t'+str(inv_size)+'\t'+'INV-segment'+'\t'+primary[0]+'_seg'+str(rawsegsvid)+'\t'+str(c[1])+'\t'+str((int(c[6])+int(primary[6]))//2)]
 					rawsegsvid+=1
 					continue
 	#translocation:
@@ -344,10 +344,10 @@ def segmentdeletion_tumor(segments,min_size,max_size):  #input a list of segment
 				bp2=c[4]
 			if bp1!='' and bp2!='':
 				if chrom1 > chrom2:
-					svcallset+=[chrom2+'\t'+str(bp2)+'\t'+chrom1+'\t'+str(bp1)+'\tTRA-segment\t'+primary[0]+'_seg'+str(rawsegsvid)+'\t'+str(c[1])+'\t'+str((int(c[6])+int(primary[6]))/2)]
+					svcallset+=[chrom2+'\t'+str(bp2)+'\t'+chrom1+'\t'+str(bp1)+'\tTRA-segment\t'+primary[0]+'_seg'+str(rawsegsvid)+'\t'+str(c[1])+'\t'+str((int(c[6])+int(primary[6]))//2)]
 					rawsegsvid+=1
 				if chrom1 < chrom2:
-					svcallset+=[chrom1+'\t'+str(bp1)+'\t'+chrom2+'\t'+str(bp2)+'\tTRA-segment\t'+primary[0]+'_seg'+str(rawsegsvid)+'\t'+str(c[1])+'\t'+str((int(c[6])+int(primary[6]))/2)]
+					svcallset+=[chrom1+'\t'+str(bp1)+'\t'+chrom2+'\t'+str(bp2)+'\tTRA-segment\t'+primary[0]+'_seg'+str(rawsegsvid)+'\t'+str(c[1])+'\t'+str((int(c[6])+int(primary[6]))//2)]
 					rawsegsvid+=1
 
 
@@ -423,7 +423,7 @@ def detect_sam(filename,readpath,writepath,chromosomes,min_size,max_size,record_
 	return True
 
 def detect_sortbam(filename,writepath,min_size,max_size,chrom,chromosomes,record_clip,ifrescuedup,iftumor):
-	print 'Start to detect SV from '+filename
+	print ('Start to detect SV from '+filename)
 	samfile=pysam.AlignmentFile(filename,"rb")
 	tempfile=open(writepath+'sv_raw_calls/'+filename.split('/')[-1]+'-'+chrom+'.debreak.temp','w')
 	allreads=samfile.fetch(chrom)
@@ -522,7 +522,7 @@ def detect_sortbam(filename,writepath,min_size,max_size,chrom,chromosomes,record
 		for c in clipinfo:
 			f.write(c+'\n')
 		f.close()
-	print chrom+' is done with maplength: '+str(totalmaplength)
+	print (chrom+' is done with maplength: '+str(totalmaplength))
 	if totalmaplength!=0:
 		f=open(writepath+'map_depth/maplength_'+chrom,'w')
 		f.write(str(totalmaplength)+'\n')
