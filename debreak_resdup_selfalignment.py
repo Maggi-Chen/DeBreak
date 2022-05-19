@@ -17,7 +17,7 @@ def check_dup(insinfo,writepath):
 			numsupp+=1
 			suppread+=[readname]
 
-	return numsupp//int(insinfo.split('__')[3])
+	return numsupp/int(insinfo.split('__')[3])
 
 
 def sortdup(a):

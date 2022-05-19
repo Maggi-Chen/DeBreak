@@ -11,7 +11,7 @@ def sortallsv2(a):
 
 def writevcf(readpath,writepath,chromosomes,prefix,poa,genotype):
 	if prefix:
-		prefix=prefix='.'
+		prefix=prefix+'.'
 	else:
 		prefix=''
 	g=open(writepath+prefix+'debreak.vcf','w')
@@ -49,7 +49,7 @@ def writevcf(readpath,writepath,chromosomes,prefix,poa,genotype):
 			ifsecond=1
 			svinfo1=compoundfour[i].split('\t')
 			svinfo2=compoundfour[i+1].split('\t')
-			if int(svinfo1[2])//float(svinfo2[2]) >=1.5 or int(svinfo1[2])//float(svinfo2[2]) <=1//1.5:
+			if int(svinfo1[2])/float(svinfo2[2]) >=1.5 or int(svinfo1[2])/float(svinfo2[2]) <=1/1.5:
 				if int(svinfo1[3])>=int(svinfo2[3]):
 					try:
 						compoundsv+=[svinfo1[0]+'\t'+svinfo1[1]+'\t'+svinfo1[2]+'\t'+svinfo1[3]+'\t'+svinfo1[4]+'\t'+svinfo1[5]+'\t'+svinfo1[6]+'\tCompoundSV:'+svinfo2[1]+':'+svinfo2[2]+':'+svinfo2[3]+':'+svinfo2[5]+'\t'+svinfo1[8]+'\t'+svinfo1[9]+'\t'+svinfo1[10]]

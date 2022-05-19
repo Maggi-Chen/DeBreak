@@ -101,12 +101,8 @@ def cluster(outpath,allsv,chrom,contiglength,mins,maxdepth,svtype,minmapq):
 		largedel+=mergeinfo_insertion(candi,mins,svtypeinfo)
 		candi=[]
 
-
-
 	#smaller DEL
 	allsv=[c for c in allsv if int(c.split('\t')[2])<=3000]
-
-
 	genomeposition=[0]*contiglength
 
 	for c in allsv:
@@ -148,7 +144,6 @@ def cluster(outpath,allsv,chrom,contiglength,mins,maxdepth,svtype,minmapq):
 				localdep=[genomeposition[i]]
 				start=i
 				maxdep=genomeposition[i]
-	#return 0
 
 	svregion=[c for c in svregion if c[2] < maxdepth]
 	allsvinfo={}

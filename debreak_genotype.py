@@ -44,6 +44,7 @@ def genotype_del(samfile,readpath,chrom,highcov):
 		filt='-gt-'+chrom
 	
 	f=open(readpath+filt,'w')
+
 	for c in alldel:
 		chrom=c.split('\t')[0]
 		start=int(c.split('\t')[1])
@@ -53,10 +54,10 @@ def genotype_del(samfile,readpath,chrom,highcov):
 		if numsupp > highcov:
 			#f.write(c+'\tGT=1/0\tHighCov\n')
 			continue
-		leftcov=samfile.count(chrom,start-150,start-50)
+		leftcov=samfile.count(chrom,max(0,start-150),start-50)
 		if leftcov>highcov*2:
 			continue
-		rightcov=samfile.count(chrom,stop+50,stop+150)
+		rightcov=samfile.count(chrom,max(0,stop+50),stop+150)
 		if rightcov>highcov*2:
 			continue
 
@@ -70,10 +71,13 @@ def genotype_del(samfile,readpath,chrom,highcov):
 				f.write(c+'\tGT=1/0\tHighCov\n')
 		'''
 		if localcov<=highcov:
+
 			if numsupp>=0.6*localcov:
 				f.write(c+'\tGT=1/1\n')
+
 			else:
 				f.write(c+'\tGT=1/0\n')
+
 		
 	f.close()
 	return True
@@ -88,7 +92,6 @@ def genotype_filter_ins(samfile,readpath,chrom,highcov):
 			return 0
 		filt='-gt-'+chrom
 	f=open(readpath+filt,'w')
-	g=open(readpath+'genotypeinfo','w')
 	for c in alldel:
 		chrom=c.split('\t')[0]
 		start=int(c.split('\t')[1])
@@ -109,8 +112,6 @@ def genotype_filter_ins(samfile,readpath,chrom,highcov):
 		'''
 		if localcov<=highcov:
 			f.write(c+'\tPASS\n')
-		g.write(str(leftcov)+'\t'+str(rightcov)+'\t'+c+'\n')
-	g.close()
 	f.close()
 	return True
 
@@ -124,13 +125,13 @@ def genotype_ins(samfile,readpath,chrom,highcov):
 			return 0
 		filt='-gt-'+chrom
 	f=open(readpath+filt,'w')
-
+	g=open(readpath+'genotypeinformation','w')
 	for c in alldel:
 
 		chrom=c.split('\t')[0]
 		start=int(c.split('\t')[1])
 		numsupp=int(c.split('\t')[3])
-		svsize=c.split('\t')[2]
+		svsize=int(c.split('\t')[2])
 		if numsupp > highcov:
 			#f.write(c+'\tGT=0/1\tHighCov\n')
 			continue
@@ -141,22 +142,12 @@ def genotype_ins(samfile,readpath,chrom,highcov):
 		if rightcov>highcov*2:
 			continue
 		localcov=max(leftcov,rightcov)
-		'''
-		if localcov<=highcov:
-			f.write(chrom+'\t'+str(start)+'\t'+str(svsize)+'\t'+str(numsupp)+'\t'+str(localcov)+'\n')
-		
-		if localcov > highcov:
-			if numsupp>=0.6*localcov:
-				f.write(c+'\tGT=1/1\tHighCov\n')
-			if numsupp<0.6*localcov and numsupp>=0.2*localcov:
-				f.write(c+'\tGT=1/0\tHighCov\n')
-		'''
+
 
 		if localcov<=highcov:
 			if numsupp>=0.6*localcov:
 				f.write(c+'\tGT=1/1\n')
 				continue
-
 			allalignment=samfile.fetch(chrom,start-1,start+1)
 			numsupp2=0
 			localcov2=0
@@ -170,7 +161,6 @@ def genotype_ins(samfile,readpath,chrom,highcov):
 				readstart=align.reference_start
 				readlen=0
 
-
 				for pair in cigar:
 					if pair[0] in [0,2]:
 						readlen+=pair[1]; continue
@@ -183,13 +173,13 @@ def genotype_ins(samfile,readpath,chrom,highcov):
 					if abs(start-align.reference_end)<=250 and cigar[-1][0] in [4,5]:
 						numsupp2+=1
 
-
-		if localcov<= highcov  and localcov2<=highcov:
-			if numsupp2>=0.6*localcov2:
+		if localcov<= highcov and localcov2<= highcov: 
+			if numsupp2>=0.6*localcov2 or ( svsize>=500 and numsupp2>=0.5*localcov2):
 				f.write(c+'\tGT=1/1\n')
 			else:
 				f.write(c+'\tGT=1/0\n')
-		
+
+	g.close()	
 	f.close()
 	return True
 
@@ -284,7 +274,8 @@ def genotype_tra(samfile,readpath,chrom,highcov):
 
 if __name__ == "__main__":
 	#genotype_filter_del(samfile,readpath,chrom,highcov)genotype_filter_del(samfile,readpath,chrom,highcov)
-	samfile='/data/scratch/maggic/HG002/ccs_minimap2/merged.bam'
-	readpath='/data/scratch/maggic/HG002/debreak_out/ccs/insertion-merged'
-	genotype_filter_ins(samfile,readpath,'all',200)
-
+	samfile='/data/project/chonglab/Maggic/HGSVC_sample/HG00096/download/HG00096.sort.bam'
+	readpath='/data/project/chonglab/Maggic/HGSVC_sample/HG00096/debreak-2021/insertion-merged'
+	genotype_ins(samfile,readpath,'all',250)
+	readpath='/data/project/chonglab/Maggic/HGSVC_sample/HG00096/debreak-2021/deletion-merged'
+	genotype_del(samfile,readpath,'all',250)

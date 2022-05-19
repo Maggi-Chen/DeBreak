@@ -154,7 +154,7 @@ def segmentdeletion(segments,min_size,max_size):  #input a list of segments,retu
 		if -200<overlapmap<window_max:
 			del_size=rightread[3]-leftread[4]+overlapmap
 			if min_size<=del_size<=max_size:
-				svcallset+=[chrom+'\t'+str(leftread[4]-max(0,overlapmap))+'\t'+str(del_size)+'\t'+'D-segment'+'\t'+primary[0]+'_seg'+str(rawsegsvid)+'\t'+str(c[1])+'\t'+str((int(c[6])+int(primary[6]))//2)]
+				svcallset+=[chrom+'\t'+str(max(0,leftread[4]-max(0,overlapmap)))+'\t'+str(del_size)+'\t'+'D-segment'+'\t'+primary[0]+'_seg'+str(rawsegsvid)+'\t'+str(c[1])+'\t'+str((int(c[6])+int(primary[6]))//2)]
 				rawsegsvid+=1
 
 		#duplication:

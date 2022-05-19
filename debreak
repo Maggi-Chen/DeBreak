@@ -9,6 +9,7 @@ import argparse
 import multiprocessing 
 import debreak_rescuedupfromins
 import debreak_resdup_selfalignment
+#import debreak_genotype_ml as debreak_genotype
 import debreak_genotype
 import debreak_allpoa
 import debreak_rescuelargeins
@@ -20,7 +21,6 @@ parser.add_argument('-v','--version', action='version', version='DeBreak_v1.0.2'
 parser.add_argument('--bam',type=str,default=False,help='input sorted bam. index required')
 parser.add_argument('--samlist',type=str,default=False,help='a list of SAM files of same sample')
 parser.add_argument('-o','--outpath',type=str,default='./debreak-out/',help='output directory')
-parser.add_argument('-p','--prefix',type=str,default=False,help='prefix of output')
 
 parser.add_argument('--min_size',type=int,default=48,help='minimal size of detected SV')
 parser.add_argument('--max_size',type=int,default=400000000,help='maxminal size of detected SV')
@@ -157,8 +157,6 @@ for filename in vcflist:
 
 
 # Estimate Depth of input dataset
-
-
 logfile=open(writepath+'log.txt','a')
 if not debreak_args.min_support:
 	if debreak_args.depth:
@@ -287,22 +285,37 @@ if debreak_args.no_genotype:
 		
 else:
 	logfile=open(writepath+'log.txt','a')
-
 	if debreak_args.bam:
 		logfile.write('Start genotyping for all SV candidates...\n')
 		logfile.close()
 		debreak_gt=multiprocessing.Pool(debreak_args.thread)
+		
 		for i in range(len(chromosomes)):
 			debreak_gt.apply_async(debreak_genotype.genotype_ins,args=(debreak_args.bam,writepath+'insertion-merged',chromosomes[i],highcov))
 			debreak_gt.apply_async(debreak_genotype.genotype_del,args=(debreak_args.bam,writepath+'deletion-merged',chromosomes[i],highcov))
 			debreak_gt.apply_async(debreak_genotype.genotype_del,args=(debreak_args.bam,writepath+'duplication-merged',chromosomes[i],highcov))
 			debreak_gt.apply_async(debreak_genotype.genotype_del,args=(debreak_args.bam,writepath+'inversion-merged',chromosomes[i],highcov))
 			debreak_gt.apply_async(debreak_genotype.genotype_tra,args=(debreak_args.bam,writepath+'translocation-merged',chromosomes[i],highcov))
+		'''
+		for i in range(len(chromosomes)):
+			debreak_gt.apply_async(debreak_genotype.genotype_ins,args=(debreak_args.bam,writepath+'insertion-merged',chromosomes[i],highcov))
+			debreak_gt.apply_async(debreak_genotype.genotype_del,args=(debreak_args.bam,writepath+'deletion-merged',chromosomes[i],highcov))
+			debreak_gt.apply_async(debreak_genotype.genotype_del,args=(debreak_args.bam,writepath+'duplication-merged',chromosomes[i],highcov))
+			debreak_gt.apply_async(debreak_genotype.genotype_del,args=(debreak_args.bam,writepath+'inversion-merged',chromosomes[i],highcov))
+			debreak_gt.apply_async(debreak_genotype.genotype_tra,args=(debreak_args.bam,writepath+'translocation-merged',chromosomes[i],highcov))
+
 		debreak_gt.close()
 		debreak_gt.join()
+		debreak_genotype.genotype_rf(writepath)
+		os.system("cat "+writepath+"translocation-merged-gt* >>  "+writepath+"debreak-allsv-merged-final")
+		os.system("rm "+writepath+"*merged-gt*")
+		'''
 
+		debreak_gt.close()
+		debreak_gt.join()
 		os.system("cat "+writepath+"*merged-gt* > "+writepath+"debreak-allsv-merged-final")
 		os.system("rm "+writepath+"*merged-gt*")
+		
 		logfile=open(writepath+'log.txt','a')
 		logfile.write('Done genotyping.\n')
 		logfile.close()
