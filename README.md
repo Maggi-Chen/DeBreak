@@ -81,7 +81,6 @@ optional arguments:
   --bam BAM                        Input sorted bam. index required
   --samlist SAMLIST                A list of SAM files of same sample
   -o, --outpath OUTPATH            Output directory
-  -p, --prefix PREFIX              Prefix of output
   --min_size MIN_SIZE              Minimal size of detected SV
   --max_size MAX_SIZE              Maxminal size of detected SV
   -d, --depth DEPTH                Sequencing depth of this dataset
