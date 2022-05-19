@@ -198,7 +198,7 @@ if debreak_args.maxcov:
 	highcov=debreak_args.maxcov
 	logfile.write('Using maximal depth:'+str(highcov)+'\n')
 else:
-	highcov=round(depth*2+20)
+	highcov=max(50,round(depth*2+20))
 	logfile.write('Suggested maximal depth:'+str(highcov)+'\n')
 
 logfile.write('Start clustering raw signals...\n')
