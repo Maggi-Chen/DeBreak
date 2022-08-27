@@ -45,7 +45,6 @@ def find_candi_ins_bp(writefilepath,chrom,minsupp):
 				medean=sum(allcandi)//len(allcandi)
 				startcandi+=[[medean,len(allcandi)]]
 	
-	print ('clean start of '+chrom)
 	while stopc!=[]:
 		start=stopc[0]
 		allcandi=[]
@@ -63,7 +62,6 @@ def find_candi_ins_bp(writefilepath,chrom,minsupp):
 			if minsupp*1<=len(allcandi)<=minsupp*20:
 				medean=sum(allcandi)//len(allcandi)
 				stopcandi+=[[medean,len(allcandi)]]
-	print ('clean stop of '+chrom)
 
 	startc=startcandi;   stopc=stopcandi
 	
@@ -156,7 +154,7 @@ def rescue_ins_bam(bampath,chromosomes,writepath,threads,refpath,min_supp,min_si
 		os.system("wtdbg2 -q -i "+c+" -fo "+writepath+'debreak_ins_workspace/workspace/'+c.split('/')[-1][:-3]+'.wtdbg')
 		os.system("wtpoa-cns  -q  -i "+writepath+'debreak_ins_workspace/workspace/'+c.split('/')[-1][:-3]+'.wtdbg.ctg.lay.gz  -fo '+writepath+'debreak_ins_workspace/workspace/'+c.split('/')[-1][:-3]+'.wtdbg.ctg.fa')
 		os.system("mv "+writepath+'debreak_ins_workspace/workspace/'+c.split('/')[-1][:-3]+'.wtdbg.ctg.fa  '+writepath+'debreak_ins_workspace/doneassembly/'+c.split('/')[-1][:-3]+'.wtdbg.ctg.fa')
-		os.system("rm "+writepath+'debreak_ins_workspace/workspace/'+c.split('/')[-1][:-3]+'.wtdbg*')
+		os.system("rm "+writepath+'debreak_ins_workspace/workspace/'+c.split('/')[-1][:-3]+'.wtdbg* '+c)
 	
 	os.system('ls '+writepath+"debreak_ins_workspace/doneassembly/chr*wtdbg.ctg.fa > "+writepath+'debreak_ins_workspace/doneassembly/ctgfalist')
 	ctgfalist=open(writepath+'debreak_ins_workspace/doneassembly/ctgfalist','r').read().split('\n')[:-1]
@@ -189,7 +187,7 @@ def rescue_ins_bam(bampath,chromosomes,writepath,threads,refpath,min_supp,min_si
 				testif=1; break
 		if testif==0:
 			c=c.split('\t')
-			newins+=[c[0]+'\t'+c[1]+'\t'+c[2]+'\tcontig\t0\t'+c[6]+'\trescue_largeins_'+c[4]+'\tInsertion\tPrecise\tGT=./.']
+			newins+=[c[0]+'\t'+c[1]+'\t'+c[2]+'\tcontig\t0\t'+c[6]+'\trescue_largeins_'+c[4]+'\tUnique\tInsertion\tPrecise\t'+c[7]+'\tGT=./.']
 	newins.sort(key=sort_ins)
 	testif=0
 	while testif==0:
@@ -218,6 +216,9 @@ def rescue_ins_bam(bampath,chromosomes,writepath,threads,refpath,min_supp,min_si
 	for c in cleanins:
 		f.write(c+'\n')
 	f.close()
+
+	os.system('rm -r '+writepath+'debreak_ins_workspace/startcan* '+writepath+'debreak_ins_workspace/stopcan* '+writepath+'debreak_ins_workspace/debreak_rescueins_chrom* '+writepath+'debreak_ins_workspace/readinfo_start_end* '+writepath+'debreak_ins_workspace/doneassembly')
+
 	return True
 
 

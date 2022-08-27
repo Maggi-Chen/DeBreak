@@ -77,7 +77,6 @@ def counttimesort(a):
 def cluster(outpath,allsv,chrom,contiglength,mins,maxdepth,svtype,minmapq):
 	if allsv==[]:
 		return 0
-	print (chrom,len(allsv))
 	t1=time.time()
 	# Large DEL
 	svtypeinfo={}
@@ -195,7 +194,6 @@ def cluster(outpath,allsv,chrom,contiglength,mins,maxdepth,svtype,minmapq):
 def cluster_ins(outpath,allsv,chrom,contiglength,mins,maxdepth,minmapq):
 	if allsv==[]:
 		return 0
-	print (chrom,len(allsv))
 	t1=time.time()
 	svtypeinfo='Insertion'
 	# Large INS
@@ -220,7 +218,6 @@ def cluster_ins(outpath,allsv,chrom,contiglength,mins,maxdepth,minmapq):
 	# Small INS
 	allsv=[c for c in allsv if  int(c.split('\t')[2])<=3000]
 
-	print (len(allsv))
 
 	genomeposition=[0]*contiglength
 
@@ -311,6 +308,7 @@ def cluster_ins(outpath,allsv,chrom,contiglength,mins,maxdepth,minmapq):
 
 
 	return 0
+
 
 
 

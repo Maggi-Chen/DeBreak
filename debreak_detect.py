@@ -112,6 +112,7 @@ def segmentdeletion(segments,min_size,max_size):  #input a list of segments,retu
 	svcallset=[]
 	primary=[c for c in segments if int(c[1])<=16][0]
 	segments=[c for c in segments if c != primary]
+	readseq=primary[7]
 	chrom=primary[2]
 	priflag=(int(primary[1])%32)>15
 	samedirchr=[]
@@ -145,7 +146,7 @@ def segmentdeletion(segments,min_size,max_size):  #input a list of segments,retu
 			overlap=rightread[3]-leftread[4]
 			ins_size=rightinfo[0]-leftinfo[1]-leftinfo[0]-overlap
 			if min_size<=ins_size<=max_size:
-				svcallset+=[chrom+'\t'+str(min(rightread[3],leftread[4]))+'\t'+str(ins_size)+'\t'+'I-segment'+'\t'+primary[0]+'_seg'+str(rawsegsvid)+'\t'+str(int(c[1])+int(primary[1]))+'\t'+str((int(c[6])+int(primary[6]))//2)]
+				svcallset+=[chrom+'\t'+str(min(rightread[3],leftread[4]))+'\t'+str(ins_size)+'\t'+'I-segment'+'\t'+primary[0]+'_seg'+str(rawsegsvid)+'\t'+str(int(c[1])+int(primary[1]))+'\t'+str((int(c[6])+int(primary[6]))//2)+'\t'+readseq[leftinfo[0]+leftinfo[1]:rightinfo[0]-overlap]]
 				rawsegsvid+=1
 
 		#deletion:
@@ -357,8 +358,8 @@ def segmentdeletion_tumor(segments,min_size,max_size):  #input a list of segment
 
 def detect_sam(filename,readpath,writepath,chromosomes,min_size,max_size,record_depth,if_rawsvcall):
 	print('Start to detect SVs from '+filename)
-	f=open(readpath+filename,'r')
-	c=f.readline()
+	f=pysam.AlignmentFile(readpath+filename,'r')
+	allread=f.fetch()
 	if if_rawsvcall:
 		g=open(writepath+'sv_raw_calls/'+filename[:-4]+'.debreak.temp','w')
 	else:
@@ -367,28 +368,27 @@ def detect_sam(filename,readpath,writepath,chromosomes,min_size,max_size,record_
 	lastname=''
 	segments=['']
 	totalmaplength=0
-	while c!='':
+	for c in allread:
 		#remove headerlines, secondary alignments, alignment on scallfolds
-		if c[0]=='@' or int(c.split('\t')[1])%8>3 or int(c.split('\t')[1])%512>255:
-			c=f.readline()
+		if c.is_secondary or c.flag==4:
 			continue
-		if chromosomes!=[] and c.split('\t')[2] not in chromosomes:
-			c=f.readline();continue
+		if chromosomes!=[] and c.reference_name not in chromosomes:
+			continue
 		#detect the deletion from cigar 
-		readname=c.split('\t')[0]
-		flag=c.split('\t')[1]
-		chrom=c.split('\t')[2]
-		position=int(c.split('\t')[3])
-		mappingquality=c.split('\t')[4]
-		readseq=c.split('\t')[9]
-		cigar=c.split('\t')[5]
+		readname=c.query_name
+		flag=str(c.flag)
+		chrom=c.reference_name
+		position=c.reference_start
+		mappingquality=str(c.mapq)
+		readseq=c.query_sequence
+		cigar=c.cigarstring
 		cigarinfo=cigardeletion(flag,chrom,position,cigar,min_size,max_size)
 		refend=position+cigarinfo[1]
 		cimplecigar=str(cigarinfo[2][0])+'\t'+str(cigarinfo[2][1])+'\t'+str(cigarinfo[2][2])
 		# if primary: write deletions from cigar string
-		if int(c.split('\t')[1])%4096<2048:
+		if not c.is_supplementary:
 			cigarsv=cigarinfo[0]
-			totalmaplength+=len(c.split('\t')[9])
+			totalmaplength+=c.query_length
 			rawsvid=0
 			for d in cigarsv:
 				rawsvid+=1
@@ -397,7 +397,9 @@ def detect_sam(filename,readpath,writepath,chromosomes,min_size,max_size,record_
 					g.write(d[0]+'\t'+str(d[1])+'\t'+str(d[2])+'\t'+d[3]+'\t'+readname+'_cigar'+str(rawsvid)+'\t'+flag+'\t'+mappingquality+'\t'+insertseq+'\n')
 				else:
 					g.write(d[0]+'\t'+str(d[1])+'\t'+str(d[2])+'\t'+d[3]+'\t'+readname+'_cigar'+str(rawsvid)+'\t'+flag+'\t'+mappingquality+'\n')
-		readinfo=[readname,flag,chrom,position,refend,cigarinfo[2],mappingquality]
+			readinfo=[readname,flag,chrom,position,refend,cigarinfo[2],mappingquality,readseq]
+		else:
+			readinfo=[readname,flag,chrom,position,refend,cigarinfo[2],mappingquality,'']
 		if readname!=lastname:
 			if 1<len(segments)<=20:
 				segmentd=segmentdeletion(segments,min_size,max_size)
@@ -407,7 +409,6 @@ def detect_sam(filename,readpath,writepath,chromosomes,min_size,max_size,record_
 			segments=[readinfo]
 		else:
 			segments+=[readinfo]
-		c=f.readline()
 	if 1<len(segments)<=20:
 		segmentd=segmentdeletion(segments,min_size,max_size)
 		for d in segmentd:
@@ -463,7 +464,7 @@ def detect_sortbam(filename,writepath,min_size,max_size,chrom,chromosomes,record
 				cigarinfo[2]=cigarright[1]
 			cigarinfo[1]=align.query_alignment_length
 			refend=align.reference_end+1
-			readinfo=[readname,flag,chrom,int(position),refend,cigarinfo,mappingquality]
+			readinfo=[readname,flag,chrom,int(position),refend,cigarinfo,mappingquality,'']
 			if readname in segmentreads:
 				segmentreads[readname]+=[readinfo]
 			else:
@@ -490,7 +491,7 @@ def detect_sortbam(filename,writepath,min_size,max_size,chrom,chromosomes,record
 				
 			if align.has_tag("SA"):
 				refend=position+cigarinfo[1]
-				readinfo=[readname,flag,chrom,position,refend,cigarinfo[2],mappingquality]
+				readinfo=[readname,flag,chrom,position,refend,cigarinfo[2],mappingquality,align.query_sequence]
 				if readname in segmentreads:
 					segmentreads[readname]+=[readinfo]
 				else:
@@ -529,5 +530,5 @@ def detect_sortbam(filename,writepath,min_size,max_size,chrom,chromosomes,record
 		f.close()
 	return True
 
-				
+			
 

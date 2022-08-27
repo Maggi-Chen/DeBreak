@@ -125,7 +125,6 @@ def genotype_ins(samfile,readpath,chrom,highcov):
 			return 0
 		filt='-gt-'+chrom
 	f=open(readpath+filt,'w')
-	g=open(readpath+'genotypeinformation','w')
 	for c in alldel:
 
 		chrom=c.split('\t')[0]
@@ -179,7 +178,6 @@ def genotype_ins(samfile,readpath,chrom,highcov):
 			else:
 				f.write(c+'\tGT=1/0\n')
 
-	g.close()	
 	f.close()
 	return True
 
@@ -272,10 +270,3 @@ def genotype_tra(samfile,readpath,chrom,highcov):
 	return True
 
 
-if __name__ == "__main__":
-	#genotype_filter_del(samfile,readpath,chrom,highcov)genotype_filter_del(samfile,readpath,chrom,highcov)
-	samfile='/data/project/chonglab/Maggic/HGSVC_sample/HG00096/download/HG00096.sort.bam'
-	readpath='/data/project/chonglab/Maggic/HGSVC_sample/HG00096/debreak-2021/insertion-merged'
-	genotype_ins(samfile,readpath,'all',250)
-	readpath='/data/project/chonglab/Maggic/HGSVC_sample/HG00096/debreak-2021/deletion-merged'
-	genotype_del(samfile,readpath,'all',250)

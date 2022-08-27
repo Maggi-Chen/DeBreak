@@ -230,14 +230,22 @@ logfile=open(writepath+'log.txt','a')
 logfile.write('Done clustering raw signals.\n')
 logfile.close()
 
+debreak_resdup_selfalignment.clean_ins_dup(writepath)
+
 if debreak_args.rescue_dup:
-	logfile=open(writepath+'log.txt','a')
-	logfile.write('Start identifying DUP from INS calls...\n')
-	logfile.close()
-	debreak_resdup_selfalignment.identify_duplication(vcflist,writepath)
-	logfile=open(writepath+'log.txt','a')
-	logfile.write('Done DUP rescue.\n')
-	logfile.close()
+	if debreak_args.ref:
+		logfile=open(writepath+'log.txt','a')
+		logfile.write('Start identifying DUP from INS calls...\n')
+		logfile.close()
+		debreak_resdup_selfalignment.identify_duplication(vcflist,writepath,debreak_args.ref)
+		logfile=open(writepath+'log.txt','a')
+		logfile.write('Done DUP rescue.\n')
+		logfile.close()
+	else:
+		logfile=open(writepath+'log.txt','a')
+		logfile.write('Warning: Reference genome is required for duplication rescue. Skip this step.\n')
+		logfile.close()
+
 
 # POA for all SVs
 if debreak_args.poa:
@@ -296,20 +304,6 @@ else:
 			debreak_gt.apply_async(debreak_genotype.genotype_del,args=(debreak_args.bam,writepath+'duplication-merged',chromosomes[i],highcov))
 			debreak_gt.apply_async(debreak_genotype.genotype_del,args=(debreak_args.bam,writepath+'inversion-merged',chromosomes[i],highcov))
 			debreak_gt.apply_async(debreak_genotype.genotype_tra,args=(debreak_args.bam,writepath+'translocation-merged',chromosomes[i],highcov))
-		'''
-		for i in range(len(chromosomes)):
-			debreak_gt.apply_async(debreak_genotype.genotype_ins,args=(debreak_args.bam,writepath+'insertion-merged',chromosomes[i],highcov))
-			debreak_gt.apply_async(debreak_genotype.genotype_del,args=(debreak_args.bam,writepath+'deletion-merged',chromosomes[i],highcov))
-			debreak_gt.apply_async(debreak_genotype.genotype_del,args=(debreak_args.bam,writepath+'duplication-merged',chromosomes[i],highcov))
-			debreak_gt.apply_async(debreak_genotype.genotype_del,args=(debreak_args.bam,writepath+'inversion-merged',chromosomes[i],highcov))
-			debreak_gt.apply_async(debreak_genotype.genotype_tra,args=(debreak_args.bam,writepath+'translocation-merged',chromosomes[i],highcov))
-
-		debreak_gt.close()
-		debreak_gt.join()
-		debreak_genotype.genotype_rf(writepath)
-		os.system("cat "+writepath+"translocation-merged-gt* >>  "+writepath+"debreak-allsv-merged-final")
-		os.system("rm "+writepath+"*merged-gt*")
-		'''
 
 		debreak_gt.close()
 		debreak_gt.join()
@@ -339,7 +333,7 @@ logfile=open(writepath+'log.txt','a')
 logfile.write('Start writing VCF file...\n')
 logfile.close()
 
-debreak_writevcf.writevcf_pysam(writepath,readpath)
+debreak_writevcf.writevcf_pysam(writepath,readpath,debreak_args.poa,debreak_args.ref)
 logfile=open(writepath+'log.txt','a')
 logfile.write('VCF file written. Bye.\n')
 logfile.close()
