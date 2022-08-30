@@ -8,21 +8,21 @@ def check_dup(insinfo,writepath):
 		return (0,0)
 	numsupp=0.0
 	suppread=[]
-	window=300
 	leftmost=[]
 	pos=int(insinfo.split('__')[2])+2000
 
 	for align in allinfo:
 		readname=align.split('\t')[0]
-		if readname in suppread or int(align.split('\t')[10])<0.5*int(align.split('\t')[1])  or align.split('\t')[4]!='+':
+		if readname in suppread or int(align.split('\t')[10])<0.7*int(align.split('\t')[1])  or align.split('\t')[4]!='+':
 			continue
 		start=int(align.split('\t')[7])
 		end=int(align.split('\t')[8])
-		if start<=pos<=end or abs(end-pos)<=window or abs(start-pos)<=window:
+		if start<=pos<=end:
 			numsupp+=1
 			suppread+=[readname]
 			leftmost+=[int(align.split('\t')[7])]
 
+	leftmost.sort()
 	leftmost=leftmost[max(3,len(leftmost)//4)]
 	bpshift=max(0,pos-leftmost)
 	return (numsupp/int(insinfo.split('__')[3]),bpshift)
@@ -75,6 +75,8 @@ def identify_duplication(vcflist,writepath,refpath):
 
 	rescueddup=[]
 	trueins=[]
+
+
 	ff=open(writepath+'debreak_resdup_map_space/maprateinfo','w')
 	for sv in ins:
 		insinfo=sv.split('\t')[0]+'__'+sv.split('\t')[1]+'__'+sv.split('\t')[2]+'__'+sv.split('\t')[3]
@@ -84,7 +86,6 @@ def identify_duplication(vcflist,writepath,refpath):
 		except:
 			(maprate,bpcorrection)=(0.0,0)
 		ff.write(insinfo+'\t'+str(maprate)+'\n')
-
 		if maprate>=0.5:
 			sv=sv.split('\t')
 			sv[1]=str(int(sv[1])-bpcorrection)
