@@ -38,6 +38,7 @@ Dependencies for DeBreak:
 * pysam  (tested with version 0.19.0)
 * minimap2  (tested with version 2.15)
 * wtdbg2  (tested with version 2.5)
+* bsalign  (tested with version 1.2.1)
 
 
 
