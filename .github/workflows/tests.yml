@@ -1,0 +1,108 @@
+name: tests
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+  workflow_dispatch:
+    inputs:
+      update_golden:
+        description: "Regenerate golden files for external-tool scenarios (uploaded as artifact)"
+        type: boolean
+        default: false
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    name: core (python ${{ matrix.python }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python: ["3.9", "3.11", "3.13"]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python }}
+          cache: pip
+      - run: pip install ".[test]"
+      - run: pytest -ra --cov --cov-report=term
+
+  test-external-tools:
+    name: with minimap2 / wtdbg2 / bsalign
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        shell: bash -el {0}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: mamba-org/setup-micromamba@v2
+        with:
+          environment-name: debreak
+          create-args: >-
+            python=3.11
+            minimap2=2.15
+            wtdbg=2.5
+            -c conda-forge -c bioconda
+          cache-environment: true
+
+      - name: Cache bsalign
+        id: bsalign-cache
+        uses: actions/cache@v4
+        with:
+          path: ~/bsalign-bin
+          key: bsalign-v1.2.1-${{ runner.os }}
+
+      - name: Build bsalign v1.2.1
+        if: steps.bsalign-cache.outputs.cache-hit != 'true'
+        run: |
+          git clone --depth 1 --branch v1.2.1 https://github.com/ruanjue/bsalign.git /tmp/bsalign
+          make -C /tmp/bsalign
+          mkdir -p ~/bsalign-bin
+          cp /tmp/bsalign/bsalign ~/bsalign-bin/
+
+      - name: Add bsalign to PATH
+        run: echo "$HOME/bsalign-bin" >> "$GITHUB_PATH"
+
+      - run: pip install ".[test]"
+
+      - name: Check tools
+        run: |
+          minimap2 --version
+          which wtdbg2 wtpoa-cns bsalign
+
+      - name: Run tests with coverage
+        if: ${{ !inputs.update_golden }}
+        run: |
+          pytest -ra --cov --cov-report=term --cov-report=html --cov-report=xml
+          {
+            echo "## Coverage (with external tools)"
+            coverage report --format=markdown
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload coverage report
+        if: ${{ !inputs.update_golden }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-report
+          path: |
+            htmlcov/
+            coverage.xml
+
+      - name: Regenerate golden files
+        if: ${{ inputs.update_golden }}
+        run: pytest -ra --update-golden -k "rescue_dup_matches_golden or full_pipeline_matches_golden"
+
+      - name: Upload golden files
+        if: ${{ inputs.update_golden }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: golden-external-tools
+          path: |
+            tests/golden/rescue_dup
+            tests/golden/full
